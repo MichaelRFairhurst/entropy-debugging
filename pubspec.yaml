@@ -1,0 +1,13 @@
+name: entropy_debugging
+version: 1.0.0-beta.0
+description: Dart implementation of "Entropy Debugging"
+authors:
+  - Mike Fairhurst <mfairhurst@google.com>
+homepage: https://github.com/MichaelRFairhurst/entropy_debugging.dart
+environment:
+  sdk: '>=2.2.2 <3.0.0'
+dependencies:
+  meta: '^1.1.7'
+  pedantic: '^1.8.0+1'
+  test: '^1.6.5'
+  mockito: '^4.1.0'
