@@ -1,7 +1,11 @@
 import 'dart:math';
 import 'package:entropy_debugging/src/model/markov.dart';
 import 'package:entropy_debugging/src/simplifier/nonadaptive.dart';
-import 'package:entropy_debugging/src/planner/max_size_optimal_tree.dart';
+import 'package:entropy_debugging/src/planner/caching.dart';
+import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
+import 'package:entropy_debugging/src/planner/probability_threshold_planner.dart';
+import 'package:entropy_debugging/src/decision_tree/optimal_builder.dart';
+import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
 import 'package:entropy_debugging/src/competing/delta_debugging.dart';
 
 void main() {
@@ -96,7 +100,18 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
   }
 
   final simplifier = NonadaptiveSimplifier<int>(
-      test, markov, MaxSizeOptimalTreePlanner(markov));
+    test,
+    markov,
+    CappedSizeTreePlanner(
+      CachingTreePlanner(
+        ProbabilityThresholdTreePlanner(
+          markov,
+          HuffmanLikeDecisionTreeBuilder(),
+        ),
+      ),
+      maxTreeSize: 80,
+    ),
+  );
   //final simplifier = DeltaDebugging<int>(test);
   final start = DateTime.now();
   final result = simplifier.simplify(input);
