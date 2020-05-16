@@ -15,14 +15,14 @@ import 'package:entropy_debugging/src/decision_tree/decision_tree.dart';
 /// decision trees for simplification are equivalent to an ordered tree, where
 /// each decision removes all posssibilities for some i such that all
 /// possible i < x is removed and all x >= i are preserved.
-class DecisionTreeBuilder {
+class DecisionTreeBuilder<T> {
   /// Build the optimal ordered tree for a list of decisions.
-  DecisionTree buildOptimal(List<Decision> decisions) {
+  DecisionTree<T> buildOptimal(List<Decision<T>> decisions) {
     if (decisions.length == 1) {
       return decisions.single;
     }
     if (decisions.length == 2) {
-      return Branch(decisions[0], decisions[1]);
+      return Branch<T>(decisions[0], decisions[1]);
     }
     DecisionTree result;
     double resultCost;
@@ -31,7 +31,7 @@ class DecisionTreeBuilder {
     while (rightDecisions.isNotEmpty) {
       final left = buildOptimal(leftDecisions);
       final right = buildOptimal(rightDecisions);
-      final contender = Branch(left, right);
+      final contender = Branch<T>(left, right);
       if (result == null || resultCost > contender.cost) {
         result = contender;
         resultCost = result.cost;
@@ -57,12 +57,12 @@ class DecisionTreeBuilder {
   }
 
   /// Build every possible ordered tree for a list of decisions.
-  List<DecisionTree> buildAll(List<Decision> decisions) {
+  List<DecisionTree<T>> buildAll(List<Decision<T>> decisions) {
     if (decisions.length == 1) {
       return [decisions.single];
     }
     if (decisions.length == 2) {
-      return [Branch(decisions[0], decisions[1])];
+      return [Branch<T>(decisions[0], decisions[1])];
     }
     final result = <DecisionTree>[];
     final leftDecisions = [decisions.first];
@@ -73,7 +73,7 @@ class DecisionTreeBuilder {
       result.addAll([
         for (final possibleTreeLeft in allLeftTrees)
           for (final possibleTreeRight in allRightTrees)
-            Branch(possibleTreeLeft, possibleTreeRight)
+            Branch<T>(possibleTreeLeft, possibleTreeRight)
       ]);
       leftDecisions.add(rightDecisions.first);
       rightDecisions = rightDecisions.skip(1).toList();
