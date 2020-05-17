@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:entropy_debugging/src/model/markov.dart';
+import 'package:entropy_debugging/src/simplifier/adaptive.dart';
 import 'package:entropy_debugging/src/simplifier/nonadaptive.dart';
+import 'package:entropy_debugging/src/simplifier/presampling.dart';
 import 'package:entropy_debugging/src/planner/caching.dart';
 import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
 import 'package:entropy_debugging/src/planner/probability_threshold_planner.dart';
@@ -10,7 +12,7 @@ import 'package:entropy_debugging/src/competing/delta_debugging.dart';
 
 void main() {
   final increment = 0.05;
-  final factor = 1;
+  final factor = 0.01;
   final sampleSize = 500;
   final length = 500;
   final random = Random();
@@ -99,10 +101,9 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
     return candidate.where((i) => i > 0).length == expected.length;
   }
 
-  final simplifier = NonadaptiveSimplifier<int>(
+  final simplifier = AdaptiveSimplifier<int>(
     test,
-    markov,
-    CappedSizeTreePlanner(
+    (markov) => CappedSizeTreePlanner(
       CachingTreePlanner(
         ProbabilityThresholdTreePlanner(
           markov,
