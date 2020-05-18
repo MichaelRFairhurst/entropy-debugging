@@ -1,13 +1,6 @@
 import 'dart:math';
+import 'package:entropy_debugging/entropy_debugging.dart' as entropy_debugging;
 import 'package:entropy_debugging/src/model/markov.dart';
-import 'package:entropy_debugging/src/simplifier/adaptive.dart';
-import 'package:entropy_debugging/src/simplifier/nonadaptive.dart';
-import 'package:entropy_debugging/src/simplifier/presampling.dart';
-import 'package:entropy_debugging/src/planner/caching.dart';
-import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
-import 'package:entropy_debugging/src/planner/probability_threshold_planner.dart';
-import 'package:entropy_debugging/src/decision_tree/optimal_builder.dart';
-import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
 
 void main() {
@@ -105,23 +98,8 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
     return candidate.where((i) => i > 0).length == expected.length;
   }
 
-  //final simplifier = AdaptiveSimplifier<int>(
-  //  test,
-  //  (markov) => CappedSizeTreePlanner(
-  //    CachingTreePlanner(
-  //      ProbabilityThresholdTreePlanner(
-  //        markov,
-  //        HuffmanLikeDecisionTreeBuilder(),
-  //      ),
-  //    ),
-  //    maxTreeSize: 80,
-  //  ),
-  //);
-
-  // for DD, this will do more work looking for n-minimal. Right now, that's
-  // especially unfair to count those runs against DD.
-  runs = -expected.length;
-  final simplifier = DeltaDebuggingWrapper<int>(test);
+  final simplifier = entropy_debugging.minimizer(test);
+  //final simplifier = DeltaDebuggingWrapper<int>(test);
 
   final start = DateTime.now();
   final result = simplifier.simplify(input);
