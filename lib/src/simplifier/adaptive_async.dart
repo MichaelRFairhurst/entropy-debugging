@@ -3,24 +3,27 @@ import 'dart:math';
 import 'package:entropy_debugging/src/decision_tree/builder.dart';
 import 'package:entropy_debugging/src/decision_tree/decision_tree.dart';
 import 'package:entropy_debugging/src/decision_tree/executor.dart';
+import 'package:entropy_debugging/src/decision_tree/executor_async.dart';
 import 'package:entropy_debugging/src/decision_tree/printer.dart';
 import 'package:entropy_debugging/src/decision_tree/rightmost.dart';
 import 'package:entropy_debugging/src/planner/planner.dart';
 import 'package:entropy_debugging/src/model/markov.dart';
 import 'package:entropy_debugging/src/model/sequence.dart';
-import 'package:entropy_debugging/src/simplifier/simplifier.dart';
+import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 
-/// A simplifier which generates a [MarkovModel] as it simplifies to build
-/// optimal decision trees based on the observed statistics of the data.
-class AdaptiveSimplifier<T> implements Simplifier<T> {
+/// A asynchronous simplifier which generates a [MarkovModel] as it simplifies
+/// to build optimal decision trees based on the observed statistics of the
+/// data.
+class AdaptiveAsyncSimplifier<T> implements AsyncSimplifier<T> {
   final int samples;
-  final bool Function(List<T>) function;
+  final Future<bool> Function(List<T>) function;
   TreePlanner Function(MarkovModel) plannerBuilder;
 
-  AdaptiveSimplifier(this.function, this.plannerBuilder, {this.samples = 5});
+  AdaptiveAsyncSimplifier(this.function, this.plannerBuilder,
+      {this.samples = 5});
 
-  List<T> simplify(List<T> input) {
-    // TODO: share code better with AsyncAdaptiveSimplifier
+  Future<List<T>> simplify(List<T> input) async {
+    // TODO: share code better with AdaptiveSimplifier (sync version)
     final random = Random();
     int trialsUnimportant = 0;
     int trialsUnimportantRepeats = 0;
@@ -30,12 +33,12 @@ class AdaptiveSimplifier<T> implements Simplifier<T> {
       // TODO: handle sampling the same item twice
       final randomIndex = random.nextInt(input.length - 1);
       final candidate = List<T>.from(input)..remove(randomIndex);
-      if (function(candidate)) {
+      if (await function(candidate)) {
         hitsUnimportant++;
         input = candidate;
         trialsUnimportant++;
         final pairCandidate = List<T>.from(candidate)..remove(randomIndex);
-        if (function(pairCandidate)) {
+        if (await function(pairCandidate)) {
           hitsUnimportantRepeats++;
           trialsUnimportantRepeats++;
           input = pairCandidate;
@@ -54,14 +57,14 @@ class AdaptiveSimplifier<T> implements Simplifier<T> {
       final decisionTree =
           plannerBuilder(markov).plan(result.length - offset, previous);
 
-      final executor = DecisionTreeExecutor<Sequence>((left, right) {
+      final executor = AsyncDecisionTreeExecutor<Sequence>((left, right) async {
         final pivot = DecisionTreeRightMost<Sequence>().walk(left, null);
         final list = pivot.outcome.list;
-        return !function(List<T>.from(result)
+        return !await function(List<T>.from(result)
           ..replaceRange(offset, offset + list.length, []));
       });
 
-      final decision = executor.execute(decisionTree);
+      final decision = await executor.execute(decisionTree);
       final realSequence = decision.outcome.list;
       if (realSequence.last == EventKind.important) {
         result.replaceRange(offset, offset + realSequence.length - 1, []);
