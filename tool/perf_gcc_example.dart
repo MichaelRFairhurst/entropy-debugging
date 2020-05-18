@@ -1,11 +1,7 @@
 import 'dart:io';
 
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
-import 'package:entropy_debugging/src/simplifier/adaptive.dart';
-import 'package:entropy_debugging/src/planner/caching.dart';
-import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
-import 'package:entropy_debugging/src/planner/probability_threshold_planner.dart';
-import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
+import 'package:entropy_debugging/entropy_debugging.dart' as entropy_debugging;
 
 const gccCompileExample = '''
 #define SIZE 20
@@ -101,27 +97,17 @@ bool testGccOptions(List<String> input) {
 }
 
 void main() {
-  print('compile');
+  print('-- perf compile');
   perf_compile();
-  print('options');
+  print('\n-- perf options');
   perf_options();
 }
 
 void perf_compile() {
   final simplifiers = {
     'delta debugging': DeltaDebuggingWrapper(testCompile),
-    'entropy debugging': AdaptiveSimplifier<String>(
-      testCompile,
-      (markov) => CappedSizeTreePlanner(
-        CachingTreePlanner(
-          ProbabilityThresholdTreePlanner(
-            markov,
-            HuffmanLikeDecisionTreeBuilder(),
-          ),
-        ),
-        maxTreeSize: 80,
-      ),
-    )
+    'entropy debugging': entropy_debugging.simplifier(testCompile),
+    'entropy debugging (min)': entropy_debugging.minimizer(testCompile),
   };
 
   for (final entry in simplifiers.entries) {
@@ -137,18 +123,8 @@ void perf_compile() {
 void perf_options() {
   final simplifiers = {
     'delta debugging': DeltaDebuggingWrapper(testGccOptions),
-    'entropy debugging': AdaptiveSimplifier<String>(
-      testGccOptions,
-      (markov) => CappedSizeTreePlanner(
-        CachingTreePlanner(
-          ProbabilityThresholdTreePlanner(
-            markov,
-            HuffmanLikeDecisionTreeBuilder(),
-          ),
-        ),
-        maxTreeSize: 80,
-      ),
-    )
+    'entropy debugging': entropy_debugging.simplifier(testGccOptions),
+    'entropy debugging (min)': entropy_debugging.minimizer(testGccOptions),
   };
 
   for (final entry in simplifiers.entries) {

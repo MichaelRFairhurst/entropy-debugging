@@ -12,7 +12,7 @@ import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapp
 
 void main() {
   final increment = 0.05;
-  final factor = 0.01;
+  final factor = 1;
   final sampleSize = 500;
   final length = 500;
   final random = Random();
@@ -105,23 +105,23 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
     return candidate.where((i) => i > 0).length == expected.length;
   }
 
-  final simplifier = AdaptiveSimplifier<int>(
-    test,
-    (markov) => CappedSizeTreePlanner(
-      CachingTreePlanner(
-        ProbabilityThresholdTreePlanner(
-          markov,
-          HuffmanLikeDecisionTreeBuilder(),
-        ),
-      ),
-      maxTreeSize: 80,
-    ),
-  );
+  //final simplifier = AdaptiveSimplifier<int>(
+  //  test,
+  //  (markov) => CappedSizeTreePlanner(
+  //    CachingTreePlanner(
+  //      ProbabilityThresholdTreePlanner(
+  //        markov,
+  //        HuffmanLikeDecisionTreeBuilder(),
+  //      ),
+  //    ),
+  //    maxTreeSize: 80,
+  //  ),
+  //);
 
-  // For DD, this will do more work looking for n-minimal. Right now, that's
+  // for DD, this will do more work looking for n-minimal. Right now, that's
   // especially unfair to count those runs against DD.
-  // runs = -expected.length;
-  // final simplifier = DeltaDebuggingWrapper<int>(test);
+  runs = -expected.length;
+  final simplifier = DeltaDebuggingWrapper<int>(test);
 
   final start = DateTime.now();
   final result = simplifier.simplify(input);

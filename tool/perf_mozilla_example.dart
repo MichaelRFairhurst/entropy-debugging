@@ -1,9 +1,5 @@
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
-import 'package:entropy_debugging/src/simplifier/adaptive.dart';
-import 'package:entropy_debugging/src/planner/caching.dart';
-import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
-import 'package:entropy_debugging/src/planner/probability_threshold_planner.dart';
-import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
+import 'package:entropy_debugging/entropy_debugging.dart' as entropy_debugging;
 
 const mozilla_example = '''
 <td align=left valign=top>
@@ -51,18 +47,8 @@ bool test(List<String> input) {
 void main() {
   final simplifiers = {
     'delta debugging': DeltaDebuggingWrapper(test),
-    'entropy debugging': AdaptiveSimplifier<String>(
-      test,
-      (markov) => CappedSizeTreePlanner(
-        CachingTreePlanner(
-          ProbabilityThresholdTreePlanner(
-            markov,
-            HuffmanLikeDecisionTreeBuilder(),
-          ),
-        ),
-        maxTreeSize: 80,
-      ),
-    )
+    'entropy debugging': entropy_debugging.simplifier(test),
+    'entropy debugging (min)': entropy_debugging.minimizer(test),
   };
 
   for (final entry in simplifiers.entries) {
