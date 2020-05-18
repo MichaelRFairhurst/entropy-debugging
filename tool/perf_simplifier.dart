@@ -8,7 +8,7 @@ import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
 import 'package:entropy_debugging/src/planner/probability_threshold_planner.dart';
 import 'package:entropy_debugging/src/decision_tree/optimal_builder.dart';
 import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
-import 'package:entropy_debugging/src/competing/delta_debugging.dart';
+import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
 
 void main() {
   final increment = 0.05;
@@ -57,43 +57,47 @@ void tabulate(MarkovModel markov, Random random, int sampleSize, int length) {
 }
 
 _Result singleTrial(MarkovModel markov, Random random, int length) {
-  final input = <int>[];
-  final expected = <int>[];
-  var state = EventKind.unknown;
-  for (int i = 1; i <= length; ++i) {
-    EventKind next;
-    switch (state) {
-      case EventKind.unknown:
-        if (random.nextDouble() < markov.pUnderlyingImportant) {
-          next = EventKind.important;
-        } else {
-          next = EventKind.unimportant;
-        }
-        break;
-      case EventKind.important:
-        if (random.nextDouble() < markov.pRepeatImportant) {
-          next = EventKind.important;
-        } else {
-          next = EventKind.unimportant;
-        }
-        break;
-      case EventKind.unimportant:
-        if (random.nextDouble() < markov.pRepeatUnimportant) {
-          next = EventKind.unimportant;
-        } else {
-          next = EventKind.important;
-        }
-        break;
-    }
+  var input;
+  var expected;
+  do {
+    input = <int>[];
+    expected = <int>[];
+    var state = EventKind.unknown;
+    for (int i = 1; i <= length; ++i) {
+      EventKind next;
+      switch (state) {
+        case EventKind.unknown:
+          if (random.nextDouble() < markov.pUnderlyingImportant) {
+            next = EventKind.important;
+          } else {
+            next = EventKind.unimportant;
+          }
+          break;
+        case EventKind.important:
+          if (random.nextDouble() < markov.pRepeatImportant) {
+            next = EventKind.important;
+          } else {
+            next = EventKind.unimportant;
+          }
+          break;
+        case EventKind.unimportant:
+          if (random.nextDouble() < markov.pRepeatUnimportant) {
+            next = EventKind.unimportant;
+          } else {
+            next = EventKind.important;
+          }
+          break;
+      }
 
-    if (next == EventKind.unimportant) {
-      input.add(-i);
-    } else {
-      input.add(i);
-      expected.add(i);
+      if (next == EventKind.unimportant) {
+        input.add(-i);
+      } else {
+        input.add(i);
+        expected.add(i);
+      }
+      state = next;
     }
-    state = next;
-  }
+  } while (expected.isEmpty);
 
   int runs = 0;
   bool test(List<int> candidate) {
@@ -113,7 +117,12 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
       maxTreeSize: 80,
     ),
   );
-  //final simplifier = DeltaDebugging<int>(test);
+
+  // For DD, this will do more work looking for n-minimal. Right now, that's
+  // especially unfair to count those runs against DD.
+  // runs = -expected.length;
+  // final simplifier = DeltaDebuggingWrapper<int>(test);
+
   final start = DateTime.now();
   final result = simplifier.simplify(input);
   final end = DateTime.now();
