@@ -14,6 +14,7 @@ class AdaptiveSimplifier<T> implements Simplifier<T> {
   final DistributionTracker distributionTracker;
   final bool Function(List<T>) function;
   TreePlanner Function(MarkovModel) plannerBuilder;
+  int lastDeletedOffset;
 
   AdaptiveSimplifier(this.function, this.plannerBuilder)
       : distributionTracker = DistributionTracker();
@@ -42,9 +43,13 @@ class AdaptiveSimplifier<T> implements Simplifier<T> {
       final realSequence = decision.outcome.list;
       if (realSequence.last == EventKind.important) {
         result.replaceRange(offset, offset + realSequence.length - 1, []);
+        if (realSequence.length > 1) {
+          lastDeletedOffset = offset;
+        }
         offset += 1;
       } else {
         result.replaceRange(offset, offset + realSequence.length, []);
+        lastDeletedOffset = offset;
       }
       distributionTracker.sequenceHit(realSequence, previous);
       previous = realSequence.last;

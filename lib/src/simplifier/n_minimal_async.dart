@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:entropy_debugging/src/simplifier/simplifier.dart';
+import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 
 /// A simplifier that finds a `1-minimal` case, as defined by the original delta
 /// debugging paper, via a simple brute search.
@@ -14,16 +14,16 @@ import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 /// in this pass, then we would have to see if this removal has made 8 or 9
 /// waste, because we can make no guarantees about our blackbox function other
 /// than idempotence.
-class OneMinimalSimplifier<T> implements Simplifier<T> {
-  final bool Function(List<T>) test;
+class OneMinimalAsyncSimplifier<T> implements AsyncSimplifier<T> {
+  final Future<bool> Function(List<T>) test;
 
   final int _searchUntil;
 
-  OneMinimalSimplifier(this.test, {int lastDeletedOffset})
+  OneMinimalAsyncSimplifier(this.test, {int lastDeletedOffset})
       : _searchUntil = lastDeletedOffset;
 
   @override
-  List<T> simplify(List<T> input) {
+  Future<List<T>> simplify(List<T> input) async {
     var result = List<T>.from(input);
     bool madeProgress;
 
@@ -34,7 +34,7 @@ class OneMinimalSimplifier<T> implements Simplifier<T> {
 
       for (int i = 0; i < result.length && i != searchUntil; ++i) {
         final candidate = List<T>.from(result)..removeAt(i);
-        if (test(candidate)) {
+        if (await test(candidate)) {
           result = candidate;
           madeProgress = true;
           searchUntil = i - 1;

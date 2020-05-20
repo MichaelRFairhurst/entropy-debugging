@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:entropy_debugging/entropy_debugging.dart' as entropy_debugging;
 import 'package:entropy_debugging/src/model/markov.dart';
+import 'package:entropy_debugging/src/simplifier/n_minimal.dart';
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
 
 void main() {
@@ -100,6 +101,7 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
 
   final simplifier = entropy_debugging.minimizer(test);
   //final simplifier = DeltaDebuggingWrapper<int>(test);
+  //final simplifier = OneMinimalSimplifier<int>(test);
 
   final start = DateTime.now();
   final result = simplifier.simplify(input);

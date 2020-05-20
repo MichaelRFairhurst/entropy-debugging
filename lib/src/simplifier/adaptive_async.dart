@@ -19,6 +19,7 @@ class AdaptiveAsyncSimplifier<T> implements AsyncSimplifier<T> {
   final DistributionTracker distributionTracker;
   final Future<bool> Function(List<T>) function;
   TreePlanner Function(MarkovModel) plannerBuilder;
+  int lastDeletedOffset;
 
   AdaptiveAsyncSimplifier(this.function, this.plannerBuilder)
       : distributionTracker = DistributionTracker();
@@ -47,9 +48,13 @@ class AdaptiveAsyncSimplifier<T> implements AsyncSimplifier<T> {
       final realSequence = decision.outcome.list;
       if (realSequence.last == EventKind.important) {
         result.replaceRange(offset, offset + realSequence.length - 1, []);
+        if (realSequence.length > 1) {
+          lastDeletedOffset = offset;
+        }
         offset += 1;
       } else {
         result.replaceRange(offset, offset + realSequence.length, []);
+        lastDeletedOffset = offset;
       }
       distributionTracker.sequenceHit(realSequence, previous);
       previous = realSequence.last;
