@@ -285,3 +285,18 @@ file. However, it also may result in lower sampling bias.
 Lastly, further work to prove the lower and upper bound of this algorithm and
 what the true optimal search is could yield light about how much this algorithm
 leaves to be improved and where it could be improved most specifically.
+
+# TODO
+
+- Sampling bug (can sample same input too much)
+- Compare to afl-tmin
+- Prove *some* lower bound, compare to it
+- Benchmark relative to input size
+- Remove nonsense markov benchmarks better
+- Randomize order in adaptive simplifier
+- Create a SimplifierBuilder
+- make `lastDeletedOffset` part of Simplifier API
+- Make caching work for adaptive model
+- Compare extreme inputs with a predisposition to low entropy
+- Make DeltaDebugging allow async
+- code share async/non async using Future API.
