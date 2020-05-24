@@ -11,14 +11,13 @@ import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 /// A simplifier which expects an input [MarkovModel] and assumes it is accurate
 /// for the inputs it receives, and simplifies them based on that model plus the
 /// given [planner].
-class NonadaptiveSimplifier<T> implements Simplifier<T> {
-  final bool Function(List<T>) function;
+class NonadaptiveSimplifier implements Simplifier {
   final MarkovModel markov;
   final TreePlanner planner;
 
-  NonadaptiveSimplifier(this.function, this.markov, this.planner);
+  NonadaptiveSimplifier(this.markov, this.planner);
 
-  List<T> simplify(List<T> input) {
+  List<T> simplify<T>(List<T> input, bool Function(List<T>) function) {
     var result = List<T>.from(input);
     EventKind previous = EventKind.unknown;
 

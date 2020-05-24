@@ -1,7 +1,9 @@
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
 import 'package:entropy_debugging/entropy_debugging.dart' as entropy_debugging;
+import 'package:entropy_debugging/src/simplifier/profiling.dart';
+import 'package:entropy_debugging/src/simplifier/string.dart';
 
-const mozilla_example = '''
+const mozillaExample = '''
 <td align=left valign=top>
 <SELECT NAME="op sys" MULTIPLE SIZE=7>
 <OPTION VALUE="All">All<OPTION VALUE="Windows 3.1">Windows 3.1<OPTION
@@ -38,25 +40,18 @@ VALUE="trivial">trivial<OPTION VALUE="enhancement">enhancement</SELECT>
 </table> 
 ''';
 
-int testCounter = 0;
-bool test(List<String> input) {
-  testCounter++;
-  return RegExp('<SELECT[^>]*>').hasMatch(input.join(''));
-}
+bool test(String input) => RegExp('<SELECT[^>]*>').hasMatch(input);
 
 void main() {
   final simplifiers = {
-    'delta debugging': DeltaDebuggingWrapper(test),
-    'entropy debugging': entropy_debugging.simplifier(test),
-    'entropy debugging (min)': entropy_debugging.minimizer(test),
+    'delta debugging': DeltaDebuggingWrapper(),
+    'entropy debugging': entropy_debugging.simplifier(),
+    'entropy debugging (min)': entropy_debugging.minimizer(),
   };
 
   for (final entry in simplifiers.entries) {
-    testCounter = 0;
-    final start = DateTime.now();
-    final result = entry.value.simplify(mozilla_example.split(''));
-    final duration = DateTime.now().difference(start);
-    print(
-        '${entry.key} ran $testCounter tests in ${duration.inMicroseconds} microseconds, and got ${result.join('')}');
+    print(entry.key);
+    StringSimplifier(ProfilingSimplifier(entry.value, printAfter: true))
+        .simplify(mozillaExample, test);
   }
 }

@@ -14,16 +14,14 @@ import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 /// in this pass, then we would have to see if this removal has made 8 or 9
 /// waste, because we can make no guarantees about our blackbox function other
 /// than idempotence.
-class OneMinimalSimplifier<T> implements Simplifier<T> {
-  final bool Function(List<T>) test;
-
+class OneMinimalSimplifier implements Simplifier {
   final int _searchUntil;
 
-  OneMinimalSimplifier(this.test, {int lastDeletedOffset})
+  OneMinimalSimplifier({int lastDeletedOffset})
       : _searchUntil = lastDeletedOffset;
 
   @override
-  List<T> simplify(List<T> input) {
+  List<T> simplify<T>(List<T> input, bool Function(List<T>) test) {
     var result = List<T>.from(input);
     bool madeProgress;
 

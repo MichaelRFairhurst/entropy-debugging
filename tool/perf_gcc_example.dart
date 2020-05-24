@@ -1,5 +1,7 @@
 import 'dart:io';
 
+import 'package:entropy_debugging/src/simplifier/string.dart';
+import 'package:entropy_debugging/src/simplifier/profiling.dart';
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
 import 'package:entropy_debugging/entropy_debugging.dart' as entropy_debugging;
 
@@ -48,14 +50,19 @@ int main(int argc, char *argv[])
     return copy(y, x, SIZE);
 }''';
 
-int testCounter = 0;
-bool testCompile(List<String> input) {
-  testCounter++;
-  return RegExp(
-          r'[a-z]\(double\s+z\[\],\s*int\s+n\)\s*{\s*int\s+i,\s*j;\s*(i\s*=\s*0;\s*)?for\s*\([^);]*;[^);]*;[^)]*\)\s*{\s*i\s*=\s*i\s*\+\s*j\s*\+\s*1;\s*z\[i\]\s*=\s*z\[i\]\s*\*\s*\(z\[0\]\s*\+\s*(1|0|1.0)\);\s*}\s*return\s+z\[n\];\s*}',
-          multiLine: true)
-      .hasMatch(input.join(''));
-}
+final compileRegex = RegExp(
+    r'[a-z]\(double\s+z\[\],\s*int\s+n\)\s*{'
+    r'\s*int\s+i,\s*j;'
+    r'\s*(i\s*=\s*0;\s*)?'
+    r'for\s*\([^);]*;[^);]*;[^)]*\)\s*{'
+    r'\s*i\s*=\s*i\s*\+\s*j\s*\+\s*1;'
+    r'\s*z\[i\]\s*=\s*z\[i\]\s*\*\s*\(z\[0\]\s*\+\s*(1|0|1.0)\);'
+    r'\s*}'
+    r'\s*return\s+z\[n\];'
+    r'\s*}',
+    multiLine: true);
+
+bool testCompile(String input) => compileRegex.hasMatch(input);
 
 const gccOptionsExample = [
   '--ffloat-store',
@@ -91,10 +98,8 @@ const gccOptionsExample = [
   '--fstrict-aliasing',
 ];
 
-bool testGccOptions(List<String> input) {
-  testCounter++;
-  return input.contains('--fast-math') || input.contains('--fforce-addr');
-}
+bool testGccOptions(List<String> input) =>
+    input.contains('--fast-math') || input.contains('--fforce-addr');
 
 void main() {
   print('-- perf compile');
@@ -103,36 +108,24 @@ void main() {
   perf_options();
 }
 
-void perf_compile() {
-  final simplifiers = {
-    'delta debugging': DeltaDebuggingWrapper(testCompile),
-    'entropy debugging': entropy_debugging.simplifier(testCompile),
-    'entropy debugging (min)': entropy_debugging.minimizer(testCompile),
-  };
+final simplifiers = {
+  'delta debugging': DeltaDebuggingWrapper(),
+  'entropy debugging': entropy_debugging.simplifier(),
+  'entropy debugging (min)': entropy_debugging.minimizer(),
+};
 
+void perf_compile() {
   for (final entry in simplifiers.entries) {
-    testCounter = 0;
-    final start = DateTime.now();
-    final result = entry.value.simplify(gccCompileExample.split(''));
-    final duration = DateTime.now().difference(start);
-    print(
-        '${entry.key} ran $testCounter tests in ${duration.inMicroseconds} microseconds, and got ${result.join('')}');
+    print(entry.key);
+    StringSimplifier(ProfilingSimplifier(entry.value, printAfter: true))
+        .simplify(gccCompileExample, testCompile);
   }
 }
 
 void perf_options() {
-  final simplifiers = {
-    'delta debugging': DeltaDebuggingWrapper(testGccOptions),
-    'entropy debugging': entropy_debugging.simplifier(testGccOptions),
-    'entropy debugging (min)': entropy_debugging.minimizer(testGccOptions),
-  };
-
   for (final entry in simplifiers.entries) {
-    testCounter = 0;
-    final start = DateTime.now();
-    final result = entry.value.simplify(gccOptionsExample);
-    final duration = DateTime.now().difference(start);
-    print(
-        '${entry.key} ran $testCounter tests in ${duration.inMicroseconds} microseconds, and got ${result.join('')}');
+    print(entry.key);
+    ProfilingSimplifier(entry.value, printAfter: true)
+        .simplify(gccOptionsExample, testGccOptions);
   }
 }

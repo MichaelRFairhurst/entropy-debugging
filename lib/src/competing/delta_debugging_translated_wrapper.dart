@@ -1,17 +1,22 @@
 import 'package:entropy_debugging/src/competing/delta_debugging_translated.dart';
 import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 
-class DeltaDebuggingWrapper<T> extends DD implements Simplifier<T> {
+class DeltaDebuggingWrapper implements Simplifier {
+  @override
+  List<T> simplify<T>(List<T> input, bool Function(List<T>) test) =>
+      _DeltaDebuggingWrapper<T>(test).simplify(input);
+}
+
+class _DeltaDebuggingWrapper<T> extends DD {
   final bool Function(List<T>) testFunction;
 
-  DeltaDebuggingWrapper(this.testFunction);
+  _DeltaDebuggingWrapper(this.testFunction);
 
   @override
   Result doTest(List<Delta> c) {
     return testFunction(coerce(c)) ? Result.fail : Result.pass;
   }
 
-  @override
   List<T> simplify(List<T> input) {
     var byOffset = <Delta>[];
     for (var i = 0; i < input.length; ++i) {

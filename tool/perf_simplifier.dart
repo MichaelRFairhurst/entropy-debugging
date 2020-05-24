@@ -3,6 +3,7 @@ import 'package:entropy_debugging/entropy_debugging.dart' as entropy_debugging;
 import 'package:entropy_debugging/src/model/markov.dart';
 import 'package:entropy_debugging/src/simplifier/n_minimal.dart';
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
+import 'package:entropy_debugging/src/simplifier/profiling.dart';
 
 void main() {
   final increment = 0.05;
@@ -93,19 +94,17 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
     }
   } while (expected.isEmpty);
 
-  int runs = 0;
-  bool test(List<int> candidate) {
-    runs++;
-    return candidate.where((i) => i > 0).length == expected.length;
-  }
+  bool test(List<int> candidate) =>
+      candidate.where((i) => i > 0).length == expected.length;
 
-  final simplifier = entropy_debugging.minimizer(test);
-  //final simplifier = DeltaDebuggingWrapper<int>(test);
-  //final simplifier = OneMinimalSimplifier<int>(test);
+  final simplifier = ProfilingSimplifier(
+      entropy_debugging.minimizer()
+      //DeltaDebuggingWrapper<int>(monitor)
+      //OneMinimalSimplifier<int>(monitor)
+      ,
+      printAfter: false);
 
-  final start = DateTime.now();
-  final result = simplifier.simplify(input);
-  final end = DateTime.now();
+  final result = simplifier.simplify(input, test);
   if (result.length != expected.length) {
     throw 'bad result! $input produced $result';
   } else {
@@ -115,5 +114,5 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
       }
     }
   }
-  return _Result(runs, end.difference(start));
+  return _Result(simplifier.runs, simplifier.fullTime);
 }

@@ -2,12 +2,13 @@ import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 
 /// A simplifier that simply passes the result of the [first] simplifier into
 /// the [second] simplifier.
-class TwoPassSimplifier<T> implements Simplifier<T> {
-  final Simplifier<T> first;
-  final Simplifier<T> second;
+class TwoPassSimplifier implements Simplifier {
+  final Simplifier first;
+  final Simplifier second;
 
   TwoPassSimplifier(this.first, this.second);
 
   @override
-  List<T> simplify(List<T> input) => second.simplify(first.simplify(input));
+  List<T> simplify<T>(List<T> input, bool Function(List<T>) test) =>
+      second.simplify(first.simplify(input, test), test);
 }

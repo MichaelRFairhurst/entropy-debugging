@@ -14,16 +14,15 @@ import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 /// in this pass, then we would have to see if this removal has made 8 or 9
 /// waste, because we can make no guarantees about our blackbox function other
 /// than idempotence.
-class OneMinimalAsyncSimplifier<T> implements AsyncSimplifier<T> {
-  final Future<bool> Function(List<T>) test;
-
+class OneMinimalAsyncSimplifier implements AsyncSimplifier {
   final int _searchUntil;
 
-  OneMinimalAsyncSimplifier(this.test, {int lastDeletedOffset})
+  OneMinimalAsyncSimplifier({int lastDeletedOffset})
       : _searchUntil = lastDeletedOffset;
 
   @override
-  Future<List<T>> simplify(List<T> input) async {
+  Future<List<T>> simplify<T>(
+      List<T> input, Future<bool> Function(List<T>) test) async {
     var result = List<T>.from(input);
     bool madeProgress;
 

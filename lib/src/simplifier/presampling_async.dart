@@ -19,18 +19,18 @@ import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 /// random sampling driven simplification, or can be used in front of an
 /// adaptive simplifier to add in some pure random sampling behavior into its
 /// approach.
-class PresamplingAsyncSimplifier<T> implements AsyncSimplifier<T> {
+class PresamplingAsyncSimplifier implements AsyncSimplifier {
   final DistributionTracker distributionTracker;
   final int samples;
-  final Future<bool> Function(List<T>) function;
 
-  PresamplingAsyncSimplifier(this.function, {this.samples = 25})
+  PresamplingAsyncSimplifier({this.samples = 25})
       : distributionTracker = DistributionTracker();
 
-  PresamplingAsyncSimplifier.forTracker(this.distributionTracker, this.function,
+  PresamplingAsyncSimplifier.forTracker(this.distributionTracker,
       {this.samples = 25});
 
-  Future<List<T>> simplify(List<T> input) async {
+  Future<List<T>> simplify<T>(
+      List<T> input, Future<bool> Function(List<T>) function) async {
     final random = Random();
     for (int i = 0; i < samples; ++i) {
       if (input.length < 2) {

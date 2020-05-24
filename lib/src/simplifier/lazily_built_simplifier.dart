@@ -1,16 +1,19 @@
 import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 
-class LazilyBuiltSimplifier<T> implements Simplifier<T> {
-  final Simplifier<T> Function(List<T>) build;
+class LazilyBuiltSimplifier implements Simplifier {
+  final Simplifier Function(List<Object>) build;
 
   LazilyBuiltSimplifier(this.build);
-  List<T> simplify(List<T> input) => build(input).simplify(input);
+  List<T> simplify<T>(List<T> input, bool Function(List<T>) test) =>
+      build(input).simplify(input, test);
 }
 
-class LazilyBuiltAsyncSimplifier<T> implements AsyncSimplifier<T> {
-  final AsyncSimplifier<T> Function(List<T>) build;
+class LazilyBuiltAsyncSimplifier implements AsyncSimplifier {
+  final AsyncSimplifier Function(List<Object>) build;
 
   LazilyBuiltAsyncSimplifier(this.build);
-  Future<List<T>> simplify(List<T> input) => build(input).simplify(input);
+  Future<List<T>> simplify<T>(
+          List<T> input, Future<bool> Function(List<T>) test) =>
+      build(input).simplify(input, test);
 }
