@@ -46,9 +46,9 @@ class SimplifierBuilder extends _SimplifierBuilderBase {
 
   void adaptiveConsume() => andThen(_buildAdaptive());
 
-  void profile([String label]) => _simplifier = label == null
+  void profile([String label]) => _simplifier = (label == null
       ? ProfilingSimplifier(_simplifier)
-      : ProfilingSimplifier(_simplifier, printAfter: true, label: label);
+      : ProfilingSimplifier(_simplifier, printAfter: true, label: label));
 
   void minimize() => andThen(
       LazilyBuiltSimplifier((_) => _buildMinimizer(_adaptiveSimplifier)));
@@ -104,9 +104,9 @@ class AsyncSimplifierBuilder extends _SimplifierBuilderBase {
 
   void adaptiveConsume() => andThen(_buildAdaptive());
 
-  void profile([String label]) => label == null
-      ? _simplifier = ProfilingAsyncSimplifier(_simplifier)
-      : ProfilingAsyncSimplifier(_simplifier, printAfter: true, label: label);
+  void profile([String label]) => _simplifier = (label == null
+      ? ProfilingAsyncSimplifier(_simplifier)
+      : ProfilingAsyncSimplifier(_simplifier, printAfter: true, label: label));
 
   void minimize() => andThen(
       LazilyBuiltAsyncSimplifier((_) => _buildMinimizer(_adaptiveSimplifier)));
