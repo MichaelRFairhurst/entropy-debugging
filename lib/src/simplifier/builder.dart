@@ -90,10 +90,12 @@ class AsyncSimplifierBuilder extends _SimplifierBuilderBase {
   AdaptiveAsyncSimplifier _adaptiveSimplifier;
 
   AsyncSimplifierBuilder({
+    AsyncSimplifier startWith,
     this.cacheTrees = true,
     this.maxTreeSize = 80,
     DistributionTracker tracker,
-  }) : this.tracker = tracker ?? DistributionTracker();
+  })  : this.tracker = tracker ?? DistributionTracker(),
+        _simplifier = startWith;
 
   AsyncSimplifier finish() => _simplifier;
 
@@ -119,7 +121,6 @@ class AsyncSimplifierBuilder extends _SimplifierBuilderBase {
       _simplifier = next;
     }
     _simplifier = TwoPassAsyncSimplifier(_simplifier, next);
-    _adaptiveSimplifier = null;
   }
 
   AsyncSimplifier _buildMinimizer(AdaptiveAsyncSimplifier adaptiveSimplifier) {
