@@ -24,68 +24,58 @@ import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
 
 class SimplifierBuilder extends _SimplifierBuilderBase {
   final bool cacheTrees;
-  final bool minimize;
-  final bool profileSimplify;
   final int maxTreeSize;
-  final int presamples;
   final DistributionTracker tracker;
+  Simplifier _simplifier;
 
   AdaptiveSimplifier _adaptiveSimplifier;
 
   SimplifierBuilder({
-    this.minimize = true,
+    Simplifier startWith,
     this.cacheTrees = true,
     this.maxTreeSize = 80,
-    this.presamples = 5,
-    this.profileSimplify = false,
     DistributionTracker tracker,
-  }) : this.tracker = tracker ?? DistributionTracker();
+  })  : this.tracker = tracker ?? DistributionTracker(),
+        _simplifier = startWith;
 
-  StringSimplifier stringSimplifier() => StringSimplifier(buildSimplifier());
+  Simplifier finish() => _simplifier;
 
-  Simplifier buildSimplifier() {
-    Simplifier simplifier = null;
+  StringSimplifier stringSimplifier() => StringSimplifier(_simplifier);
 
-    if (presamples != 0) {
-      simplifier = _buildPresampling();
+  void presample([int count = 5]) => andThen(_buildPresampling(count));
+
+  void adaptiveConsume() => andThen(_buildAdaptive());
+
+  void profile([String label]) => _simplifier = label == null
+      ? ProfilingSimplifier(_simplifier)
+      : ProfilingSimplifier(_simplifier, printAfter: true, label: label);
+
+  void minimize() => andThen(
+      LazilyBuiltSimplifier((_) => _buildMinimizer(_adaptiveSimplifier)));
+
+  void andThen(Simplifier next) {
+    if (next is AdaptiveSimplifier) {
+      _adaptiveSimplifier = next;
     }
-
-    simplifier = _andThen(simplifier, _buildAdaptive());
-
-    if (profileSimplify) {
-      simplifier = ProfilingSimplifier(simplifier);
+    if (_simplifier == null) {
+      _simplifier = next;
     }
-
-    if (minimize) {
-      simplifier = _andThen(
-        simplifier,
-        LazilyBuiltSimplifier((_) => _buildMinimizer()),
-      );
-    }
-
-    return simplifier;
+    _simplifier = TwoPassSimplifier(_simplifier, next);
   }
 
-  Simplifier _andThen(Simplifier first, Simplifier second) {
-    if (first == null) {
-      return second;
-    }
-    return TwoPassSimplifier(first, second);
-  }
-
-  Simplifier _buildMinimizer() {
-    if (_adaptiveSimplifier == null) {
+  Simplifier _buildMinimizer(AdaptiveSimplifier adaptiveSimplifier) {
+    if (adaptiveSimplifier == null) {
       return OneMinimalSimplifier();
     }
-    if (_adaptiveSimplifier.lastDeletedOffset == null) {
+    if (adaptiveSimplifier.lastDeletedOffset == null) {
       return NoopSimplifier();
     }
     return OneMinimalSimplifier(
-        lastDeletedOffset: _adaptiveSimplifier.lastDeletedOffset);
+        lastDeletedOffset: adaptiveSimplifier.lastDeletedOffset);
   }
 
-  PresamplingSimplifier _buildPresampling() =>
-      PresamplingSimplifier.forTracker(tracker, samples: presamples);
+  PresamplingSimplifier _buildPresampling(int count) =>
+      PresamplingSimplifier.forTracker(tracker, samples: count);
 
   AdaptiveSimplifier _buildAdaptive() =>
       AdaptiveSimplifier.forTracker(tracker, _buildPlanner);
@@ -93,69 +83,58 @@ class SimplifierBuilder extends _SimplifierBuilderBase {
 
 class AsyncSimplifierBuilder extends _SimplifierBuilderBase {
   final bool cacheTrees;
-  final bool minimize;
-  final bool profileSimplify;
   final int maxTreeSize;
-  final int presamples;
   final DistributionTracker tracker;
+  AsyncSimplifier _simplifier;
 
   AdaptiveAsyncSimplifier _adaptiveSimplifier;
 
   AsyncSimplifierBuilder({
-    this.minimize = true,
     this.cacheTrees = true,
     this.maxTreeSize = 80,
-    this.presamples = 5,
-    this.profileSimplify = false,
     DistributionTracker tracker,
   }) : this.tracker = tracker ?? DistributionTracker();
 
+  AsyncSimplifier finish() => _simplifier;
+
   AsyncStringSimplifier stringSimplifier() =>
-      AsyncStringSimplifier(buildSimplifier());
+      AsyncStringSimplifier(_simplifier);
 
-  AsyncSimplifier buildSimplifier() {
-    AsyncSimplifier simplifier = null;
+  void presample([int count = 5]) => andThen(_buildPresampling(count));
 
-    if (presamples != 0) {
-      simplifier = _buildPresampling();
+  void adaptiveConsume() => andThen(_buildAdaptive());
+
+  void profile([String label]) => label == null
+      ? _simplifier = ProfilingAsyncSimplifier(_simplifier)
+      : ProfilingAsyncSimplifier(_simplifier, printAfter: true, label: label);
+
+  void minimize() => andThen(
+      LazilyBuiltAsyncSimplifier((_) => _buildMinimizer(_adaptiveSimplifier)));
+
+  void andThen(AsyncSimplifier next) {
+    if (next is AdaptiveAsyncSimplifier) {
+      _adaptiveSimplifier = next;
     }
-
-    simplifier = _andThen(simplifier, _buildAdaptive());
-
-    if (profileSimplify) {
-      simplifier = ProfilingAsyncSimplifier(simplifier);
+    if (_simplifier == null) {
+      _simplifier = next;
     }
-
-    if (minimize) {
-      simplifier = _andThen(
-        simplifier,
-        LazilyBuiltAsyncSimplifier((_) => _buildMinimizer()),
-      );
-    }
-
-    return simplifier;
+    _simplifier = TwoPassAsyncSimplifier(_simplifier, next);
+    _adaptiveSimplifier = null;
   }
 
-  AsyncSimplifier _andThen(AsyncSimplifier first, AsyncSimplifier second) {
-    if (first == null) {
-      return second;
-    }
-    return TwoPassAsyncSimplifier(first, second);
-  }
-
-  AsyncSimplifier _buildMinimizer() {
-    if (_adaptiveSimplifier == null) {
+  AsyncSimplifier _buildMinimizer(AdaptiveAsyncSimplifier adaptiveSimplifier) {
+    if (adaptiveSimplifier == null) {
       return OneMinimalAsyncSimplifier();
     }
-    if (_adaptiveSimplifier.lastDeletedOffset == null) {
+    if (adaptiveSimplifier.lastDeletedOffset == null) {
       return NoopSimplifierAsync();
     }
     return OneMinimalAsyncSimplifier(
-        lastDeletedOffset: _adaptiveSimplifier.lastDeletedOffset);
+        lastDeletedOffset: adaptiveSimplifier.lastDeletedOffset);
   }
 
-  PresamplingAsyncSimplifier _buildPresampling() =>
-      PresamplingAsyncSimplifier.forTracker(tracker, samples: presamples);
+  PresamplingAsyncSimplifier _buildPresampling(int count) =>
+      PresamplingAsyncSimplifier.forTracker(tracker, samples: count);
 
   AdaptiveAsyncSimplifier _buildAdaptive() =>
       AdaptiveAsyncSimplifier.forTracker(tracker, _buildPlanner);

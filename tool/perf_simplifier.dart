@@ -98,9 +98,9 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
       candidate.where((i) => i > 0).length == expected.length;
 
   final simplifier = ProfilingSimplifier(
-      entropy_debugging.minimizer()
-      //DeltaDebuggingWrapper<int>(monitor)
-      //OneMinimalSimplifier<int>(monitor)
+      entropy_debugging.minimizer
+      //DeltaDebuggingWrapper()
+      //OneMinimalSimplifier()
       ,
       printAfter: false);
 

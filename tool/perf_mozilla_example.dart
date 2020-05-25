@@ -43,15 +43,20 @@ VALUE="trivial">trivial<OPTION VALUE="enhancement">enhancement</SELECT>
 bool test(String input) => RegExp('<SELECT[^>]*>').hasMatch(input);
 
 void main() {
-  final simplifiers = {
-    'delta debugging': DeltaDebuggingWrapper(),
-    'entropy debugging': entropy_debugging.simplifier(),
-    'entropy debugging (min)': entropy_debugging.minimizer(),
-  };
+  final simplifiers = [
+    (entropy_debugging.SimplifierBuilder(startWith: DeltaDebuggingWrapper())
+          ..profile('delta debugging'))
+        .finish(),
+    (entropy_debugging.SimplifierBuilder()
+          ..presample()
+          ..adaptiveConsume()
+          ..profile('entropy debugging simplify')
+          ..minimize()
+          ..profile('entropy debugging minimize'))
+        .finish(),
+  ];
 
-  for (final entry in simplifiers.entries) {
-    print(entry.key);
-    StringSimplifier(ProfilingSimplifier(entry.value, printAfter: true))
-        .simplify(mozillaExample, test);
+  for (final simplifier in simplifiers) {
+    StringSimplifier(simplifier).simplify(mozillaExample, test);
   }
 }

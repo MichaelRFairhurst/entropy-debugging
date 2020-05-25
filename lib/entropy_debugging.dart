@@ -6,5 +6,6 @@ export 'package:entropy_debugging/src/entropy_debugging.dart'
         stringMinimize,
         asyncSimplifier,
         asyncMinimizer,
-        stringSimplifyAsync,
-        stringMinimizeAsync;
+        asyncStringSimplify,
+        asyncStringMinimize;
+export 'package:entropy_debugging/src/simplifier/builder.dart';

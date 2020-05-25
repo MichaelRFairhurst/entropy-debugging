@@ -108,24 +108,27 @@ void main() {
   perf_options();
 }
 
-final simplifiers = {
-  'delta debugging': DeltaDebuggingWrapper(),
-  'entropy debugging': entropy_debugging.simplifier(),
-  'entropy debugging (min)': entropy_debugging.minimizer(),
-};
+final simplifiers = [
+  (entropy_debugging.SimplifierBuilder(startWith: DeltaDebuggingWrapper())
+        ..profile('delta debugging'))
+      .finish(),
+  (entropy_debugging.SimplifierBuilder()
+        ..presample()
+        ..adaptiveConsume()
+        ..profile('entropy debugging simplify')
+        ..minimize()
+        ..profile('entropy debugging minimize'))
+      .finish(),
+];
 
 void perf_compile() {
-  for (final entry in simplifiers.entries) {
-    print(entry.key);
-    StringSimplifier(ProfilingSimplifier(entry.value, printAfter: true))
-        .simplify(gccCompileExample, testCompile);
+  for (final simplifier in simplifiers) {
+    StringSimplifier(simplifier).simplify(gccCompileExample, testCompile);
   }
 }
 
 void perf_options() {
-  for (final entry in simplifiers.entries) {
-    print(entry.key);
-    ProfilingSimplifier(entry.value, printAfter: true)
-        .simplify(gccOptionsExample, testGccOptions);
+  for (final simplifier in simplifiers) {
+    simplifier.simplify(gccOptionsExample, testGccOptions);
   }
 }

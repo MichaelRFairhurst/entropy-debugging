@@ -7,8 +7,8 @@ class ProfilingSimplifier extends ProfilingSimplifierBase
     implements Simplifier {
   Simplifier innerSimplifier;
 
-  ProfilingSimplifier(this.innerSimplifier, {bool printAfter})
-      : super._(printAfter);
+  ProfilingSimplifier(this.innerSimplifier, {bool printAfter, String label})
+      : super._(printAfter, label);
 
   List<T> simplify<T>(List<T> input, bool Function(List<T>) test) {
     runs = 0;
@@ -23,8 +23,7 @@ class ProfilingSimplifier extends ProfilingSimplifierBase
     });
     fullTime = DateTime.now().difference(start);
     if (printAfter) {
-      print('simplified ${input.length} items to ${result.length} items'
-          ' in ${timingString()}');
+      print(recap(input.length, result.length));
     }
     return result;
   }
@@ -33,8 +32,9 @@ class ProfilingSimplifier extends ProfilingSimplifierBase
 class ProfilingAsyncSimplifier extends ProfilingSimplifierBase
     implements AsyncSimplifier {
   AsyncSimplifier innerSimplifier;
-  ProfilingAsyncSimplifier(this.innerSimplifier, {bool printAfter})
-      : super._(printAfter);
+  ProfilingAsyncSimplifier(this.innerSimplifier,
+      {bool printAfter, String label})
+      : super._(printAfter, label);
 
   Future<List<T>> simplify<T>(
       List<T> input, Future<bool> Function(List<T>) test) async {
@@ -50,8 +50,7 @@ class ProfilingAsyncSimplifier extends ProfilingSimplifierBase
     });
     fullTime = DateTime.now().difference(start);
     if (printAfter) {
-      print('simplified ${input.length} items to ${result.length} items'
-          ' in ${timingString()}');
+      print(recap(input.length, result.length));
     }
     return result;
   }
@@ -59,11 +58,17 @@ class ProfilingAsyncSimplifier extends ProfilingSimplifierBase
 
 abstract class ProfilingSimplifierBase {
   final bool printAfter;
+  final String label;
   int runs = 0;
   Duration testTime;
   Duration fullTime;
 
-  ProfilingSimplifierBase._(this.printAfter);
+  ProfilingSimplifierBase._(this.printAfter, this.label);
+
+  String recap(int inputLength, int resultLength) =>
+      (label == null ? '' : '[$label] ') +
+      'from $inputLength items to $resultLength items'
+          ' in ${timingString()}';
 
   String timingString() => ''
       '$runs tests'
