@@ -10,12 +10,13 @@ import 'package:entropy_debugging/src/decision_tree/rightmost.dart';
 import 'package:entropy_debugging/src/planner/planner.dart';
 import 'package:entropy_debugging/src/model/markov.dart';
 import 'package:entropy_debugging/src/model/sequence.dart';
-import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
+import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 
 /// A asynchronous simplifier which generates a [MarkovModel] as it simplifies
 /// to build optimal decision trees based on the observed statistics of the
 /// data.
-class AdaptiveAsyncSimplifier implements AsyncSimplifier {
+class AdaptiveAsyncSimplifier<T>
+    implements Simplifier<T, Future<List<T>>, Future<bool>> {
   final DistributionTracker distributionTracker;
   TreePlanner Function(MarkovModel) plannerBuilder;
   int lastDeletedOffset;
@@ -26,7 +27,7 @@ class AdaptiveAsyncSimplifier implements AsyncSimplifier {
   AdaptiveAsyncSimplifier.forTracker(
       this.distributionTracker, this.plannerBuilder);
 
-  Future<List<T>> simplify<T>(
+  Future<List<T>> simplify(
       List<T> input, Future<bool> Function(List<T>) function) async {
     var result = List<T>.from(input);
     EventKind previous = EventKind.unknown;

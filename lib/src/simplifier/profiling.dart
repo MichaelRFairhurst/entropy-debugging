@@ -1,69 +1,55 @@
 import 'dart:async';
 
-import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 
-class ProfilingSimplifier extends ProfilingSimplifierBase
-    implements Simplifier {
-  Simplifier innerSimplifier;
-
-  ProfilingSimplifier(this.innerSimplifier, {bool printAfter, String label})
-      : super._(printAfter, label);
-
-  List<T> simplify<T>(List<T> input, bool Function(List<T>) test) {
-    runs = 0;
-    testTime = Duration.zero;
-    final start = DateTime.now();
-    final result = innerSimplifier.simplify(input, (input) {
-      runs++;
-      final start = DateTime.now();
-      final result = test(input);
-      testTime += DateTime.now().difference(start);
-      return result;
-    });
-    fullTime = DateTime.now().difference(start);
-    if (printAfter) {
-      print(recap(input.length, result.length));
-    }
-    return result;
-  }
-}
-
-class ProfilingAsyncSimplifier extends ProfilingSimplifierBase
-    implements AsyncSimplifier {
-  AsyncSimplifier innerSimplifier;
-  ProfilingAsyncSimplifier(this.innerSimplifier,
-      {bool printAfter, String label})
-      : super._(printAfter, label);
-
-  Future<List<T>> simplify<T>(
-      List<T> input, Future<bool> Function(List<T>) test) async {
-    runs = 0;
-    testTime = Duration.zero;
-    final start = DateTime.now();
-    final result = await innerSimplifier.simplify(input, (input) async {
-      runs++;
-      final start = DateTime.now();
-      final result = await test(input);
-      testTime += DateTime.now().difference(start);
-      return result;
-    });
-    fullTime = DateTime.now().difference(start);
-    if (printAfter) {
-      print(recap(input.length, result.length));
-    }
-    return result;
-  }
-}
-
-abstract class ProfilingSimplifierBase {
+class ProfilingSimplifier<T, R extends FutureOr<List<T>>,
+    S extends FutureOr<bool>> implements Simplifier<T, R, S> {
+  final Simplifier<T, R, S> innerSimplifier;
   final bool printAfter;
   final String label;
   int runs = 0;
   Duration testTime;
   Duration fullTime;
 
-  ProfilingSimplifierBase._(this.printAfter, this.label);
+  ProfilingSimplifier(this.innerSimplifier, {this.printAfter, this.label});
+
+  R simplify(List<T> input, S Function(List<T>) test) {
+    runs = 0;
+    testTime = Duration.zero;
+    final start = DateTime.now();
+    final result = innerSimplifier.simplify(input, _transformTest(test));
+    if (result is Future<List<T>>) {
+      return result.then((result) {
+        _afterSimplify(start, input, result);
+        return result;
+      }) as R;
+    }
+    _afterSimplify(start, input, result as List<T>);
+    return result;
+  }
+
+  S Function(List<T>) _transformTest(S Function(List<T>) test) {
+    return (input) {
+      runs++;
+      final start = DateTime.now();
+      final result = test(input);
+      if (result is Future<bool>) {
+        return result.then((result) {
+          testTime += DateTime.now().difference(start);
+          return result;
+        }) as S;
+      }
+      testTime += DateTime.now().difference(start);
+      return result;
+    };
+  }
+
+  void _afterSimplify(DateTime start, List<T> input, List<T> result) {
+    fullTime = DateTime.now().difference(start);
+    if (printAfter) {
+      print(recap(input.length, result.length));
+    }
+  }
 
   String recap(int inputLength, int resultLength) =>
       (label == null ? '' : '[$label] ') +

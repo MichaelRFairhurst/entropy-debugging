@@ -10,7 +10,7 @@ import 'package:entropy_debugging/src/distribution/tracker.dart';
 
 /// A simplifier which generates a [MarkovModel] as it simplifies to build
 /// optimal decision trees based on the observed statistics of the data.
-class AdaptiveSimplifier implements Simplifier {
+class AdaptiveSimplifier<T> implements Simplifier<T, List<T>, bool> {
   final DistributionTracker distributionTracker;
   TreePlanner Function(MarkovModel) plannerBuilder;
   int lastDeletedOffset;
@@ -20,7 +20,7 @@ class AdaptiveSimplifier implements Simplifier {
 
   AdaptiveSimplifier.forTracker(this.distributionTracker, this.plannerBuilder);
 
-  List<T> simplify<T>(List<T> input, bool Function(List<T>) function) {
+  List<T> simplify(List<T> input, bool Function(List<T>) function) {
     var result = List<T>.from(input);
     EventKind previous = EventKind.unknown;
 

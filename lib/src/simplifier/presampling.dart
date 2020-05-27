@@ -20,7 +20,7 @@ import 'package:entropy_debugging/src/simplifier/nonadaptive.dart';
 /// random sampling driven simplification, or can be used in front of an
 /// adaptive simplifier to add in some pure random sampling behavior into its
 /// approach.
-class PresamplingSimplifier implements Simplifier {
+class PresamplingSimplifier<T> implements Simplifier<T, List<T>, bool> {
   final DistributionTracker distributionTracker;
   final int samples;
 
@@ -30,7 +30,7 @@ class PresamplingSimplifier implements Simplifier {
   PresamplingSimplifier.forTracker(this.distributionTracker,
       {this.samples = 25});
 
-  List<T> simplify<T>(List<T> input, bool Function(List<T>) function) {
+  List<T> simplify(List<T> input, bool Function(List<T>) function) {
     final random = Random();
     for (int i = 0; i < samples; ++i) {
       if (input.length < 2) {

@@ -9,7 +9,7 @@ import 'package:entropy_debugging/src/planner/planner.dart';
 import 'package:entropy_debugging/src/model/markov.dart';
 import 'package:entropy_debugging/src/model/sequence.dart';
 import 'package:entropy_debugging/src/distribution/tracker.dart';
-import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
+import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 
 /// A simplifier which is intended to be the first step in a
 /// [AsyncFirstPassSimplifier], to sample the input before invoking a second
@@ -19,7 +19,8 @@ import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 /// random sampling driven simplification, or can be used in front of an
 /// adaptive simplifier to add in some pure random sampling behavior into its
 /// approach.
-class PresamplingAsyncSimplifier implements AsyncSimplifier {
+class PresamplingAsyncSimplifier<T>
+    implements Simplifier<T, Future<List<T>>, Future<bool>> {
   final DistributionTracker distributionTracker;
   final int samples;
 
@@ -29,7 +30,7 @@ class PresamplingAsyncSimplifier implements AsyncSimplifier {
   PresamplingAsyncSimplifier.forTracker(this.distributionTracker,
       {this.samples = 25});
 
-  Future<List<T>> simplify<T>(
+  Future<List<T>> simplify(
       List<T> input, Future<bool> Function(List<T>) function) async {
     final random = Random();
     for (int i = 0; i < samples; ++i) {

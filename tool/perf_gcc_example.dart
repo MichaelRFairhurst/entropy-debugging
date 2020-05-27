@@ -109,10 +109,11 @@ void main() {
 }
 
 final simplifiers = [
-  (entropy_debugging.SimplifierBuilder(startWith: DeltaDebuggingWrapper())
+  (entropy_debugging.SimplifierBuilder<String>(
+          startWith: DeltaDebuggingWrapper())
         ..profile('delta debugging'))
       .finish(),
-  (entropy_debugging.SimplifierBuilder()
+  (entropy_debugging.SimplifierBuilder<String>()
         ..presample()
         ..adaptiveConsume()
         ..profile('entropy debugging simplify')
@@ -123,7 +124,7 @@ final simplifiers = [
 
 void perf_compile() {
   for (final simplifier in simplifiers) {
-    StringSimplifier(simplifier).simplify(gccCompileExample, testCompile);
+    StringSimplifier.sync(simplifier).simplify(gccCompileExample, testCompile);
   }
 }
 

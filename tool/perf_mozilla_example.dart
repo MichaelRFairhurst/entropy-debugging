@@ -44,10 +44,11 @@ bool test(String input) => RegExp('<SELECT[^>]*>').hasMatch(input);
 
 void main() {
   final simplifiers = [
-    (entropy_debugging.SimplifierBuilder(startWith: DeltaDebuggingWrapper())
+    (entropy_debugging.SimplifierBuilder<String>(
+            startWith: DeltaDebuggingWrapper())
           ..profile('delta debugging'))
         .finish(),
-    (entropy_debugging.SimplifierBuilder()
+    (entropy_debugging.SimplifierBuilder<String>()
           ..presample()
           ..adaptiveConsume()
           ..profile('entropy debugging simplify')
@@ -57,6 +58,6 @@ void main() {
   ];
 
   for (final simplifier in simplifiers) {
-    StringSimplifier(simplifier).simplify(mozillaExample, test);
+    StringSimplifier.sync(simplifier).simplify(mozillaExample, test);
   }
 }

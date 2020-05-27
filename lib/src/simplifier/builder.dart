@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:entropy_debugging/src/decision_tree/builder.dart';
 import 'package:entropy_debugging/src/distribution/tracker.dart';
 import 'package:entropy_debugging/src/model/markov.dart';
@@ -10,9 +12,7 @@ import 'package:entropy_debugging/src/simplifier/profiling.dart';
 import 'package:entropy_debugging/src/simplifier/string.dart';
 import 'package:entropy_debugging/src/simplifier/lazily_built_simplifier.dart';
 import 'package:entropy_debugging/src/simplifier/two_pass_simplifier.dart';
-import 'package:entropy_debugging/src/simplifier/two_pass_async_simplifier.dart';
 import 'package:entropy_debugging/src/simplifier/simplifier.dart';
-import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 import 'package:entropy_debugging/src/simplifier/presampling.dart';
 import 'package:entropy_debugging/src/simplifier/presampling_async.dart';
 import 'package:entropy_debugging/src/simplifier/adaptive.dart';
@@ -22,130 +22,114 @@ import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
 import 'package:entropy_debugging/src/planner/probability_threshold_planner.dart';
 import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
 
-class SimplifierBuilder extends _SimplifierBuilderBase {
-  final bool cacheTrees;
-  final int maxTreeSize;
-  final DistributionTracker tracker;
-  Simplifier _simplifier;
-
+class SimplifierBuilder<T> extends _SimplifierBuilderBase<T, List<T>, bool> {
   AdaptiveSimplifier _adaptiveSimplifier;
 
   SimplifierBuilder({
-    Simplifier startWith,
+    Simplifier<T, List<T>, bool> startWith,
+    bool cacheTrees = true,
+    int maxTreeSize = 80,
+    DistributionTracker tracker,
+  }) : super(
+            startWith: startWith,
+            cacheTrees: cacheTrees,
+            maxTreeSize: maxTreeSize,
+            tracker: tracker);
+
+  PresamplingSimplifier<T> _buildPresampling(int count) =>
+      PresamplingSimplifier<T>.forTracker(tracker, samples: count);
+
+  AdaptiveSimplifier<T> _buildAdaptive() => _adaptiveSimplifier =
+      AdaptiveSimplifier<T>.forTracker(tracker, _buildPlanner);
+
+  OneMinimalSimplifier<T> _buildOneMinimal({int lastDeletedOffset}) =>
+      OneMinimalSimplifier<T>(lastDeletedOffset: lastDeletedOffset);
+
+  int Function() get _getLastDeletedOffset => _adaptiveSimplifier == null
+      ? null
+      : () => _adaptiveSimplifier.lastDeletedOffset;
+}
+
+class AsyncSimplifierBuilder<T>
+    extends _SimplifierBuilderBase<T, Future<List<T>>, Future<bool>> {
+  AdaptiveAsyncSimplifier _adaptiveSimplifier;
+
+  AsyncSimplifierBuilder({
+    Simplifier<T, Future<List<T>>, Future<bool>> startWith,
+    bool cacheTrees = true,
+    int maxTreeSize = 80,
+    DistributionTracker tracker,
+  }) : super(
+            startWith: startWith,
+            cacheTrees: cacheTrees,
+            maxTreeSize: maxTreeSize,
+            tracker: tracker);
+
+  PresamplingAsyncSimplifier<T> _buildPresampling(int count) =>
+      PresamplingAsyncSimplifier<T>.forTracker(tracker, samples: count);
+
+  AdaptiveAsyncSimplifier<T> _buildAdaptive() => _adaptiveSimplifier =
+      AdaptiveAsyncSimplifier<T>.forTracker(tracker, _buildPlanner);
+
+  OneMinimalAsyncSimplifier<T> _buildOneMinimal({int lastDeletedOffset}) =>
+      OneMinimalAsyncSimplifier<T>(lastDeletedOffset: lastDeletedOffset);
+
+  int Function() get _getLastDeletedOffset => _adaptiveSimplifier == null
+      ? null
+      : () => _adaptiveSimplifier.lastDeletedOffset;
+}
+
+abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
+    S extends FutureOr<bool>> {
+  final bool cacheTrees;
+  final int maxTreeSize;
+  final DistributionTracker tracker;
+  Simplifier<T, R, S> _simplifier;
+
+  _SimplifierBuilderBase({
+    Simplifier<T, R, S> startWith,
     this.cacheTrees = true,
     this.maxTreeSize = 80,
     DistributionTracker tracker,
   })  : this.tracker = tracker ?? DistributionTracker(),
         _simplifier = startWith;
 
-  Simplifier finish() => _simplifier;
-
-  StringSimplifier stringSimplifier() => StringSimplifier(_simplifier);
+  Simplifier<T, R, S> finish() => _simplifier;
 
   void presample([int count = 5]) => andThen(_buildPresampling(count));
 
   void adaptiveConsume() => andThen(_buildAdaptive());
 
   void profile([String label]) => _simplifier = (label == null
-      ? ProfilingSimplifier(_simplifier)
-      : ProfilingSimplifier(_simplifier, printAfter: true, label: label));
+      ? ProfilingSimplifier<T, R, S>(_simplifier)
+      : ProfilingSimplifier<T, R, S>(_simplifier,
+          printAfter: true, label: label));
 
-  void minimize() => andThen(
-      LazilyBuiltSimplifier((_) => _buildMinimizer(_adaptiveSimplifier)));
+  void minimize() =>
+      andThen(LazilyBuiltSimplifier<T, R, S>((_) => _buildMinimizer()));
 
-  void andThen(Simplifier next) {
-    if (next is AdaptiveSimplifier) {
-      _adaptiveSimplifier = next;
-    }
+  void andThen(Simplifier<T, R, S> next) {
     if (_simplifier == null) {
       _simplifier = next;
     }
     _simplifier = TwoPassSimplifier(_simplifier, next);
   }
 
-  Simplifier _buildMinimizer(AdaptiveSimplifier adaptiveSimplifier) {
-    if (adaptiveSimplifier == null) {
-      return OneMinimalSimplifier();
+  Simplifier<T, R, S> _buildMinimizer() {
+    if (_getLastDeletedOffset == null) {
+      return _buildOneMinimal();
     }
-    if (adaptiveSimplifier.lastDeletedOffset == null) {
+    int lastDeletedOffset = _getLastDeletedOffset();
+    if (lastDeletedOffset == null) {
       return NoopSimplifier();
     }
-    return OneMinimalSimplifier(
-        lastDeletedOffset: adaptiveSimplifier.lastDeletedOffset);
+    return _buildOneMinimal(lastDeletedOffset: lastDeletedOffset);
   }
 
-  PresamplingSimplifier _buildPresampling(int count) =>
-      PresamplingSimplifier.forTracker(tracker, samples: count);
-
-  AdaptiveSimplifier _buildAdaptive() =>
-      AdaptiveSimplifier.forTracker(tracker, _buildPlanner);
-}
-
-class AsyncSimplifierBuilder extends _SimplifierBuilderBase {
-  final bool cacheTrees;
-  final int maxTreeSize;
-  final DistributionTracker tracker;
-  AsyncSimplifier _simplifier;
-
-  AdaptiveAsyncSimplifier _adaptiveSimplifier;
-
-  AsyncSimplifierBuilder({
-    AsyncSimplifier startWith,
-    this.cacheTrees = true,
-    this.maxTreeSize = 80,
-    DistributionTracker tracker,
-  })  : this.tracker = tracker ?? DistributionTracker(),
-        _simplifier = startWith;
-
-  AsyncSimplifier finish() => _simplifier;
-
-  AsyncStringSimplifier stringSimplifier() =>
-      AsyncStringSimplifier(_simplifier);
-
-  void presample([int count = 5]) => andThen(_buildPresampling(count));
-
-  void adaptiveConsume() => andThen(_buildAdaptive());
-
-  void profile([String label]) => _simplifier = (label == null
-      ? ProfilingAsyncSimplifier(_simplifier)
-      : ProfilingAsyncSimplifier(_simplifier, printAfter: true, label: label));
-
-  void minimize() => andThen(
-      LazilyBuiltAsyncSimplifier((_) => _buildMinimizer(_adaptiveSimplifier)));
-
-  void andThen(AsyncSimplifier next) {
-    if (next is AdaptiveAsyncSimplifier) {
-      _adaptiveSimplifier = next;
-    }
-    if (_simplifier == null) {
-      _simplifier = next;
-    }
-    _simplifier = TwoPassAsyncSimplifier(_simplifier, next);
-  }
-
-  AsyncSimplifier _buildMinimizer(AdaptiveAsyncSimplifier adaptiveSimplifier) {
-    if (adaptiveSimplifier == null) {
-      return OneMinimalAsyncSimplifier();
-    }
-    if (adaptiveSimplifier.lastDeletedOffset == null) {
-      return NoopSimplifierAsync();
-    }
-    return OneMinimalAsyncSimplifier(
-        lastDeletedOffset: adaptiveSimplifier.lastDeletedOffset);
-  }
-
-  PresamplingAsyncSimplifier _buildPresampling(int count) =>
-      PresamplingAsyncSimplifier.forTracker(tracker, samples: count);
-
-  AdaptiveAsyncSimplifier _buildAdaptive() =>
-      AdaptiveAsyncSimplifier.forTracker(tracker, _buildPlanner);
-}
-
-abstract class _SimplifierBuilderBase {
-  bool get cacheTrees;
-  int get maxTreeSize;
-
-  DistributionTracker get tracker;
+  Simplifier<T, R, S> _buildAdaptive();
+  Simplifier<T, R, S> _buildPresampling(int count);
+  Simplifier<T, R, S> _buildOneMinimal({int lastDeletedOffset});
+  int Function() get _getLastDeletedOffset;
 
   TreePlanner _buildPlanner(MarkovModel model) {
     TreePlanner planner = ProbabilityThresholdTreePlanner(

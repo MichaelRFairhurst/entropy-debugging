@@ -3,17 +3,17 @@ import 'package:entropy_debugging/src/competing/delta_debugging_translated.dart'
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_async.dart'
     as async;
 import 'package:entropy_debugging/src/simplifier/simplifier.dart';
-import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 
-class DeltaDebuggingWrapper implements Simplifier {
+class DeltaDebuggingWrapper<T> implements Simplifier<T, List<T>, bool> {
   @override
-  List<T> simplify<T>(List<T> input, bool Function(List<T>) test) =>
+  List<T> simplify(List<T> input, bool Function(List<T>) test) =>
       _DeltaDebuggingWrapper<T>(test).simplify(input);
 }
 
-class DeltaDebuggingWrapperAsync implements AsyncSimplifier {
+class DeltaDebuggingWrapperAsync<T>
+    implements Simplifier<T, Future<List<T>>, Future<bool>> {
   @override
-  Future<List<T>> simplify<T>(
+  Future<List<T>> simplify(
           List<T> input, Future<bool> Function(List<T>) test) =>
       _DeltaDebuggingWrapperAsync<T>(test).simplify(input);
 }

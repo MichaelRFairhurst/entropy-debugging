@@ -1,65 +1,72 @@
 import 'package:entropy_debugging/src/simplifier/builder.dart';
 import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 import 'package:entropy_debugging/src/simplifier/string.dart';
-import 'package:entropy_debugging/src/simplifier/async_simplifier.dart';
 
 /// Get the entropy debugging simplifier builder.
-SimplifierBuilder get simplifierBuilder => SimplifierBuilder()
+SimplifierBuilder<T> simplifierBuilder<T>() => SimplifierBuilder()
   ..presample(5)
   ..adaptiveConsume();
 
 /// Get the entropy debugging minimizer builder.
-SimplifierBuilder get minimizerBuilder => simplifierBuilder..minimize();
+SimplifierBuilder<T> minimizerBuilder<T>() =>
+    simplifierBuilder<T>()..minimize();
 
 /// Get the entropy debugging simplifier.
-Simplifier get simplifier => simplifierBuilder.finish();
+Simplifier<T, List<T>, bool> simplifier<T>() => simplifierBuilder<T>().finish();
 
 /// Get the entropy debugging simplifier.
-Simplifier get minimizer => minimizerBuilder.finish();
+Simplifier<T, List<T>, bool> minimizer<T>() => minimizerBuilder<T>().finish();
 
 /// Get the entropy debugging string simplifier.
-StringSimplifier get stringSimplifier => simplifierBuilder.stringSimplifier();
+StringSimplifier<String, List<String>, bool> stringSimplifier() =>
+    StringSimplifier.sync(simplifier<String>());
 
 /// Perform entropy debugging simplification on the string against the [test].
 String stringSimplify(String input, bool Function(String) test) =>
-    stringSimplifier.simplify(input, test);
+    stringSimplifier().simplify(input, test);
 
 /// Get the entropy debugging string minimizer.
-StringSimplifier get stringMinimizer => minimizerBuilder.stringSimplifier();
+StringSimplifier<String, List<String>, bool> stringMinimizer() =>
+    StringSimplifier.sync(minimizerBuilder().finish());
 
 /// Perform entropy debugging minimization on the string against the [test].
 String stringMinimize(String input, bool Function(String) test) =>
-    stringMinimizer.simplify(input, test);
+    stringMinimizer().simplify(input, test);
 
 /// Get the async entropy debugging simplifier builder.
-AsyncSimplifierBuilder get asyncSimplifierBuilder => AsyncSimplifierBuilder()
-  ..presample(5)
-  ..adaptiveConsume();
+AsyncSimplifierBuilder<T> asyncSimplifierBuilder<T>() =>
+    AsyncSimplifierBuilder()
+      ..presample(5)
+      ..adaptiveConsume();
 
 /// Get the async entropy debugging minimizer builder.
-AsyncSimplifierBuilder get asyncMinimizerBuilder =>
-    asyncSimplifierBuilder..minimize();
+AsyncSimplifierBuilder<T> asyncMinimizerBuilder<T>() =>
+    asyncSimplifierBuilder()..minimize();
 
 /// Get the entropy debugging async simplifier.
-AsyncSimplifier get asyncSimplifier => asyncSimplifierBuilder.finish();
+Simplifier<T, Future<List<T>>, Future<bool>> asyncSimplifier<T>() =>
+    asyncSimplifierBuilder().finish();
 
 /// Get the entropy debugging azync minimizing simplifier.
-AsyncSimplifier get asyncMinimizer => asyncMinimizerBuilder.finish();
+Simplifier<T, Future<List<T>>, Future<bool>> asyncMinimizer<T>() =>
+    asyncMinimizerBuilder().finish();
 
 /// Get the entropy debugging async string simplifier.
-AsyncStringSimplifier get asyncStringSimplifier =>
-    asyncSimplifierBuilder.stringSimplifier();
+StringSimplifier<Future<String>, Future<List<String>>, Future<bool>>
+    asyncStringSimplifier() =>
+        StringSimplifier.async(asyncSimplifierBuilder().finish());
 
 /// Perform entropy debugging simplification on the string against the [test].
 Future<String> asyncStringSimplify(
         String input, Future<bool> Function(String) test) =>
-    asyncStringSimplifier.simplify(input, test);
+    asyncStringSimplifier().simplify(input, test);
 
 /// Get the entropy debugging async string minimizer.
-AsyncStringSimplifier get asyncStringMinimizer =>
-    asyncMinimizerBuilder.stringSimplifier();
+StringSimplifier<Future<String>, Future<List<String>>, Future<bool>>
+    asyncStringMinimizer() =>
+        StringSimplifier.async(asyncMinimizerBuilder().finish());
 
 /// Perform entropy debugging async minimization on the string against the test.
 Future<String> asyncStringMinimize(
         String input, Future<bool> Function(String) test) =>
-    asyncStringMinimizer.simplify(input, test);
+    asyncStringMinimizer().simplify(input, test);
