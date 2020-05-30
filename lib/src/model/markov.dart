@@ -48,23 +48,25 @@ class MarkovModel {
   /// for instance) is unimportant.
   double get pUnderlyingUnimportant => 1 - pUnderlyingImportant;
 
-  MarkovModel(this.pTransitionToImportant, this.pUnderlyingImportant);
+  Map<EventKind, Map<EventKind, double>> _probabilityMatrix;
 
-  Map<EventKind, Map<EventKind, double>> get _probabilityMatrix => {
-        EventKind.unknown: {
-          EventKind.important: pUnderlyingImportant,
-          EventKind.unimportant: pUnderlyingUnimportant,
-          EventKind.unknown: 1,
-        },
-        EventKind.unimportant: {
-          EventKind.unimportant: pRepeatUnimportant,
-          EventKind.important: pTransitionToImportant,
-        },
-        EventKind.important: {
-          EventKind.important: pRepeatImportant,
-          EventKind.unimportant: pTransitionToUnimportant,
-        }
-      };
+  MarkovModel(this.pTransitionToImportant, this.pUnderlyingImportant) {
+    _probabilityMatrix = {
+      EventKind.unknown: {
+        EventKind.important: pUnderlyingImportant,
+        EventKind.unimportant: pUnderlyingUnimportant,
+        EventKind.unknown: 1,
+      },
+      EventKind.unimportant: {
+        EventKind.unimportant: pRepeatUnimportant,
+        EventKind.important: pTransitionToImportant,
+      },
+      EventKind.important: {
+        EventKind.important: pRepeatImportant,
+        EventKind.unimportant: pTransitionToUnimportant,
+      }
+    };
+  }
 
   double probabilityOf(EventKind first, EventKind second) =>
       _probabilityMatrix[first][second] ??

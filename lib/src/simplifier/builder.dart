@@ -28,7 +28,7 @@ class SimplifierBuilder<T> extends _SimplifierBuilderBase<T, List<T>, bool> {
   SimplifierBuilder({
     Simplifier<T, List<T>, bool> startWith,
     bool cacheTrees = true,
-    int maxTreeSize = 80,
+    int maxTreeSize = 1000,
     DistributionTracker tracker,
   }) : super(
             startWith: startWith,
@@ -88,8 +88,8 @@ abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
 
   _SimplifierBuilderBase({
     Simplifier<T, R, S> startWith,
-    this.cacheTrees = true,
-    this.maxTreeSize = 80,
+    this.cacheTrees,
+    this.maxTreeSize,
     DistributionTracker tracker,
   })  : this.tracker = tracker ?? DistributionTracker(),
         _simplifier = startWith;
@@ -142,7 +142,7 @@ abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
     }
 
     if (maxTreeSize != null) {
-      planner = CappedSizeTreePlanner(planner, maxTreeSize: 80);
+      planner = CappedSizeTreePlanner(planner, maxTreeSize: maxTreeSize);
     }
 
     return planner;
