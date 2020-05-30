@@ -292,11 +292,8 @@ leaves to be improved and where it could be improved most specifically.
 - Compare to afl-tmin
 - Prove *some* lower bound, compare to it
 - Benchmark relative to input size
-- Remove nonsense markov benchmarks better
 - Randomize order in adaptive simplifier
-- Create a SimplifierBuilder
 - make `lastDeletedOffset` part of Simplifier API
 - Make caching work for adaptive model
 - Compare extreme inputs with a predisposition to low entropy
-- Make DeltaDebugging allow async
-- code share async/non async using Future API.
+- even better code share async/non async using Future API.
