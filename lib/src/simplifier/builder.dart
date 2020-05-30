@@ -120,8 +120,9 @@ abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
   void andThen(Simplifier<T, R, S> next) {
     if (_simplifier == null) {
       _simplifier = next;
+    } else {
+      _simplifier = TwoPassSimplifier(_simplifier, next);
     }
-    _simplifier = TwoPassSimplifier(_simplifier, next);
   }
 
   Simplifier<T, R, S> _buildMinimizer() {
