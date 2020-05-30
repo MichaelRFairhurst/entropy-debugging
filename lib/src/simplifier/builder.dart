@@ -5,6 +5,7 @@ import 'package:entropy_debugging/src/distribution/tracker.dart';
 import 'package:entropy_debugging/src/model/markov.dart';
 import 'package:entropy_debugging/src/model/sequence.dart';
 import 'package:entropy_debugging/src/planner/planner.dart';
+import 'package:entropy_debugging/src/planner/builder.dart';
 import 'package:entropy_debugging/src/simplifier/n_minimal.dart';
 import 'package:entropy_debugging/src/simplifier/n_minimal_async.dart';
 import 'package:entropy_debugging/src/simplifier/noop.dart';
@@ -21,6 +22,7 @@ import 'package:entropy_debugging/src/planner/caching.dart';
 import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
 import 'package:entropy_debugging/src/planner/probability_threshold_planner.dart';
 import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
+import 'package:entropy_debugging/src/decision_tree/naive_entropy_builder.dart';
 
 class SimplifierBuilder<T> extends _SimplifierBuilderBase<T, List<T>, bool> {
   AdaptiveSimplifier _adaptiveSimplifier;
@@ -30,11 +32,13 @@ class SimplifierBuilder<T> extends _SimplifierBuilderBase<T, List<T>, bool> {
     bool cacheTrees = true,
     int maxTreeSize = 1000,
     DistributionTracker tracker,
+    TreePlanner Function(MarkovModel) buildPlanner,
   }) : super(
             startWith: startWith,
             cacheTrees: cacheTrees,
             maxTreeSize: maxTreeSize,
-            tracker: tracker);
+            tracker: tracker,
+            buildPlanner: buildPlanner);
 
   PresamplingSimplifier<T> _buildPresampling(int count) =>
       PresamplingSimplifier<T>.forTracker(tracker, samples: count);
@@ -59,11 +63,13 @@ class AsyncSimplifierBuilder<T>
     bool cacheTrees = true,
     int maxTreeSize = 80,
     DistributionTracker tracker,
+    TreePlanner Function(MarkovModel) buildPlanner,
   }) : super(
             startWith: startWith,
             cacheTrees: cacheTrees,
             maxTreeSize: maxTreeSize,
-            tracker: tracker);
+            tracker: tracker,
+            buildPlanner: buildPlanner);
 
   PresamplingAsyncSimplifier<T> _buildPresampling(int count) =>
       PresamplingAsyncSimplifier<T>.forTracker(tracker, samples: count);
@@ -84,6 +90,7 @@ abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
   final bool cacheTrees;
   final int maxTreeSize;
   final DistributionTracker tracker;
+  final TreePlanner Function(MarkovModel) _buildPlanner;
   Simplifier<T, R, S> _simplifier;
 
   _SimplifierBuilderBase({
@@ -91,8 +98,10 @@ abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
     this.cacheTrees,
     this.maxTreeSize,
     DistributionTracker tracker,
+    TreePlanner Function(MarkovModel) buildPlanner,
   })  : this.tracker = tracker ?? DistributionTracker(),
-        _simplifier = startWith;
+        _simplifier = startWith,
+        _buildPlanner = buildPlanner ?? TreePlannerBuilder.defaultPlanner;
 
   Simplifier<T, R, S> finish() => _simplifier;
 
@@ -130,24 +139,4 @@ abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
   Simplifier<T, R, S> _buildPresampling(int count);
   Simplifier<T, R, S> _buildOneMinimal({int lastDeletedOffset});
   int Function() get _getLastDeletedOffset;
-
-  TreePlanner _buildPlanner(MarkovModel model) {
-    TreePlanner planner = ProbabilityThresholdTreePlanner(
-      model,
-      _buildTreeBuilder(),
-    );
-
-    if (cacheTrees) {
-      planner = CachingTreePlanner(planner);
-    }
-
-    if (maxTreeSize != null) {
-      planner = CappedSizeTreePlanner(planner, maxTreeSize: maxTreeSize);
-    }
-
-    return planner;
-  }
-
-  DecisionTreeBuilder<Sequence> _buildTreeBuilder() =>
-      HuffmanLikeDecisionTreeBuilder();
 }
