@@ -1,0 +1,29 @@
+\begin{thebibliography}{1}
+
+\bibitem{dd}
+Zeller, A., and Hildebrandt, R., 2002.
+\newblock ``Simplifying and isolating failure-inducing input''.
+\newblock {\em IEEE Trans. Softw. Eng., {\bf 28}}(2), Feb., p.~183–200.
+
+\bibitem{ddRealPerspectives}
+Kai~Yu, Mengxiang~Lin, J.~C., 2010.
+\newblock ``Towards automated debugging in software evolution: Evaluating delta
+  debugging on real regression bugs from the developers’ perspectives''.
+
+\bibitem{hdd}
+Misherghi, G., and Su, Z., 2006.
+\newblock ``Hdd: Hierarchical delta debugging''.
+\newblock In Proceedings of the 28th International Conference on Software
+  Engineering, ICSE ’06, Association for Computing Machinery, p.~142–151.
+
+\bibitem{golombRice}
+Malvar, H., 2006.
+\newblock ``Adaptive run-length/golomb-rice encoding of quantized generalized
+  gaussian sources with unknown statistics''.
+\newblock pp.~23 -- 32.
+
+\bibitem{informationGain}
+Quinlan, J.~R., 1986.
+\newblock ``Induction of decision trees''.
+
+\end{thebibliography}

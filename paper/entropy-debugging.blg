@@ -1,0 +1,50 @@
+This is BibTeX, Version 0.99d (TeX Live 2019/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: entropy-debugging.aux
+The style file: asmems4.bst
+Database file #1: entropy-debugging.bib
+Warning--empty journal in ddRealPerspectives
+Warning--empty booktitle in golombRice
+Warning--empty journal in informationGain
+You've used 5 entries,
+            1984 wiz_defined-function locations,
+            517 strings with 4232 characters,
+and the built_in function-call counts, 1293 in all, are:
+= -- 126
+> -- 26
+< -- 0
++ -- 12
+- -- 7
+* -- 55
+:= -- 163
+add.period$ -- 13
+call.type$ -- 5
+change.case$ -- 5
+chr.to.int$ -- 0
+cite$ -- 8
+duplicate$ -- 92
+empty$ -- 125
+format.name$ -- 7
+if$ -- 324
+int.to.chr$ -- 0
+int.to.str$ -- 5
+missing$ -- 5
+newline$ -- 26
+num.names$ -- 5
+pop$ -- 26
+preamble$ -- 1
+purify$ -- 0
+quote$ -- 0
+skip$ -- 73
+stack$ -- 0
+substring$ -- 64
+swap$ -- 50
+text.length$ -- 0
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 0
+warning$ -- 3
+while$ -- 9
+width$ -- 6
+write$ -- 52
+(There were 3 warnings)
