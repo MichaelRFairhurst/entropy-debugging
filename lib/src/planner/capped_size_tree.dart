@@ -17,5 +17,15 @@ class CappedSizeTreePlanner implements TreePlanner {
   CappedSizeTreePlanner(this._innerPlanner, {this.maxTreeSize = 10});
 
   DecisionTree<Sequence> plan(int length, EventKind previous) =>
-      _innerPlanner.plan(length > maxTreeSize ? maxTreeSize : length, previous);
+      _innerPlanner.plan(_cap(length), previous);
+
+  int _cap(int length) {
+    if (length < maxTreeSize) {
+      return length;
+    }
+    // Split the sequence in even chunks rather than simply truncating. The hope
+    // is that we get two trees of some low cost n, rather than one large tree
+    // of cost much over n followed by a tree of cost very close to n.
+    return (length / (length / maxTreeSize).ceil()).ceil();
+  }
 }

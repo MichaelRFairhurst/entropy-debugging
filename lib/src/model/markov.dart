@@ -78,6 +78,9 @@ class MarkovModel {
     for (final next in sequence) {
       probability *= probabilityOf(current, next);
       current = next;
+      //if (probability < 0) {
+      //  return 0;
+      //}
     }
     return probability;
   }

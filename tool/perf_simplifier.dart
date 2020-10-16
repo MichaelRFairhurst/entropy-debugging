@@ -1,13 +1,15 @@
+import 'dart:developer';
 import 'dart:math';
 import 'package:entropy_debugging/entropy_debugging.dart' as entropy_debugging;
 import 'package:entropy_debugging/src/model/markov.dart';
+import 'package:entropy_debugging/src/model/lower_bound.dart';
 import 'package:entropy_debugging/src/simplifier/n_minimal.dart';
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
 import 'package:entropy_debugging/src/simplifier/profiling.dart';
 
 void main() {
   final increment = 0.05;
-  final factor = 1;
+  final factor = 0.01;
   final sampleSize = 500;
   final length = 500;
   final random = Random();
@@ -47,7 +49,7 @@ void tabulate(MarkovModel markov, Random random, int sampleSize, int length) {
     markov.pUnderlyingImportant,
     markov.pRepeatUnimportant,
     averageRuns,
-    averageMs
+    averageMs,
   ].join(','));
 }
 
@@ -105,6 +107,7 @@ _Result singleTrial(MarkovModel markov, Random random, int length) {
       printAfter: false);
 
   final result = simplifier.simplify(input, test);
+  //debugger();
   if (result.length != expected.length) {
     throw 'bad result! $input produced $result';
   } else {

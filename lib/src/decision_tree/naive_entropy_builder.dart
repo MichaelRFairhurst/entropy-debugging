@@ -12,8 +12,8 @@ import 'package:entropy_debugging/src/decision_tree/builder.dart';
 /// [HuffmanLikeDecisionTreeBuilder], or [entropyCombinatorBuilder] which is a
 /// combination of the two algorithms (and can build better trees, but is also
 /// slower to build them).
-DecisionTreeBuilder<T> naiveEntropyDecisionTreeBuilder<T>() =>
-    SimpleTopDownBuilder<T>(NaiveEntropyDecisionTreeBuilderStep<T>());
+DecisionTreeBuilder<T> informationGainDecisionTreeBuilder<T>() =>
+    SimpleTopDownBuilder<T>(InformationGainDecisionTreeBuilderStep<T>());
 
 /// A decision tree builder that combines the naive entropy approach, with a
 /// huffmanlike approach, and for non-huffmanlike paths builds optimal subtrees
@@ -21,51 +21,59 @@ DecisionTreeBuilder<T> naiveEntropyDecisionTreeBuilder<T>() =>
 ///
 /// Not optimal if input size is over 8, and slower to build than huffman or
 /// naive entropy builders, but can produce better trees.
-DecisionTreeBuilder<T> entropyCombinatorBuilder<T>() =>
+DecisionTreeBuilder<T> informationGainCombinatorBuilder<T>() =>
     DecisionTreeBuilderCombinator<T>(
         OptimalSizeThresholdTreeBuilderStep<T>(
-            NaiveEntropyDecisionTreeBuilderStep<T>(), 8),
+            InformationGainDecisionTreeBuilderStep<T>(), 8),
         [HuffmanLikeDecisionTreeBuilder<T>()]);
 
 /// A [TopDownDecisionTreeBuilderStep]s that emulate entropy based decision tree
 /// learning.
 ///
-/// See [naiveEntropyDecisionTreeBuilder] and [entropyCombinator
+/// See [informationGainDecisionTreeBuilder] and [entropyCombinator
 /// however, a combination of the two can result in better performance. This
 /// also integrates better with [OptimalDecisionTreeBuilder] since it is a top
 /// down algorithm. That is why [TopDownDecisionTreeBuilderStep] exists, to
 /// compose those algorithms together.
-class NaiveEntropyDecisionTreeBuilderStep<T>
+class InformationGainDecisionTreeBuilderStep<T>
     implements TopDownDecisionTreeBuilderStep<T> {
+  double conditionalEntropy(List<Decision> decisions) {
+    final pTotal = decisions.fold(0.0, (p, d) => p + d.probability);
+    double entropy = 0.0;
+    for (final decision in decisions) {
+      entropy += decision.probability * -log2(decision.probability / pTotal);
+    }
+    return entropy;
+  }
+
   @override
   DecisionTree<T> build(
       List<Decision<T>> decisions, DecisionTreeBuilder nextStep) {
-    double entropyLeft =
-        decisions.fold(0.0, (h, d) => h + entropy(d.probability));
-    double entropyRight = 0;
-
     if (decisions.length == 1) {
       return decisions.single;
     } else if (decisions.length == 2) {
       return Branch<T>(decisions.first, decisions.last);
     }
 
-    final left = List<Decision<T>>.from(decisions);
-    final right = <Decision<T>>[];
-    while (entropyLeft > entropyRight && left.length > 1) {
-      final move = left.last;
-      final moveEntropy = entropy(move.probability);
-      // Take 0.1, 0.7, 0.2. We want to keep 0.7 left because 0.8 < 0.9.
-      if (entropyLeft < entropyRight + moveEntropy) {
-        break;
+    double entropyAll = conditionalEntropy(decisions);
+    final left = <Decision<T>>[];
+    final right = decisions.reversed.toList();
+    var maxInformationGain = 0.0;
+    var maxInformationIndex = null;
+    for (var i = 0; i < decisions.length - 1; ++i) {
+      left.add(right.removeLast());
+      //print('$i ${conditionalEntropy(left)} ${conditionalEntropy(right)}');
+      final informationGain =
+          entropyAll - conditionalEntropy(left) - conditionalEntropy(right);
+      if (informationGain > maxInformationGain) {
+        maxInformationGain = informationGain;
+        maxInformationIndex = i;
       }
-      left.removeLast();
-      right.add(move);
-      entropyLeft -= moveEntropy;
-      entropyRight += moveEntropy;
     }
 
     return Branch<T>(
-        nextStep.build(left), nextStep.build(right.reversed.toList()));
+        nextStep.build(decisions.sublist(0, maxInformationIndex + 1)),
+        nextStep.build(
+            decisions.sublist(maxInformationIndex + 1, decisions.length)));
   }
 }

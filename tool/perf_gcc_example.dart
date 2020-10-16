@@ -1,5 +1,8 @@
 import 'dart:io';
 
+import 'package:entropy_debugging/src/model/markov.dart';
+import 'package:entropy_debugging/src/planner/builder.dart';
+import 'package:entropy_debugging/src/simplifier/nonadaptive.dart';
 import 'package:entropy_debugging/src/simplifier/string.dart';
 import 'package:entropy_debugging/src/simplifier/profiling.dart';
 import 'package:entropy_debugging/src/competing/delta_debugging_translated_wrapper.dart';
@@ -132,4 +135,14 @@ void perf_options() {
   for (final simplifier in simplifiers) {
     simplifier.simplify(gccOptionsExample, testGccOptions);
   }
+  (entropy_debugging.SimplifierBuilder<String>(
+          startWith: NonadaptiveSimplifier(
+              MarkovModel(0.01, 1 / gccOptionsExample.length),
+              (TreePlannerBuilder.huffmanLike()
+                    ..basic(MarkovModel(0.1, 1 / gccOptionsExample.length)))
+                  .finish()))
+        ..minimize()
+        ..profile('entropy debugging custom markov'))
+      .finish()
+      .simplify(gccOptionsExample, testGccOptions);
 }

@@ -59,6 +59,6 @@ class OptimalSizeThresholdTreeBuilderStep<T>
   DecisionTree<T> build(List<Decision<T>> decisions,
           DecisionTreeBuilder<T> nextStepBuilder) =>
       decisions.length < sizeThreshold
-          ? OptimalDecisionTreeBuilder().build(decisions)
+          ? OptimalDecisionTreeBuilder<T>().build(decisions)
           : innerStep.build(decisions, nextStepBuilder);
 }

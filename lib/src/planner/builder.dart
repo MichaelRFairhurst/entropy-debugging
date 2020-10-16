@@ -18,18 +18,21 @@ class TreePlannerBuilder {
 
   TreePlannerBuilder(this._treeBuilder);
 
-  TreePlannerBuilder.entropyCombinator() : this(entropyCombinatorBuilder());
+  TreePlannerBuilder.informationGainCombinator()
+      : this(informationGainCombinatorBuilder());
+  TreePlannerBuilder.informationGain()
+      : this(informationGainDecisionTreeBuilder());
   TreePlannerBuilder.huffmanLike() : this(HuffmanLikeDecisionTreeBuilder());
   TreePlannerBuilder.slowOptimal() : this(OptimalDecisionTreeBuilder());
 
   static TreePlanner defaultPlanner(MarkovModel model,
           {int maxOptimalTreeSize = 10,
-          int maxCombinatorSize = 100,
-          int maxTreeSize = 1000}) =>
+          int maxCombinatorSize = 50,
+          int maxTreeSize = 150}) =>
       (TreePlannerBuilder.slowOptimal()
             ..probabilityThreshold(model)
             ..sizeThreshold(maxOptimalTreeSize,
-                aboveThreshold: (TreePlannerBuilder.huffmanLike()
+                aboveThreshold: (TreePlannerBuilder.informationGainCombinator()
                       ..probabilityThreshold(model)
                       ..sizeThreshold(maxCombinatorSize,
                           aboveThreshold: (TreePlannerBuilder.huffmanLike()

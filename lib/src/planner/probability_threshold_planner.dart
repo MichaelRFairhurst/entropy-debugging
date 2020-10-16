@@ -19,7 +19,7 @@ class ProbabilityThresholdTreePlanner implements TreePlanner {
   final DecisionTreeBuilder<Sequence> decisionTreeBuilder;
 
   ProbabilityThresholdTreePlanner(this.markov, this.decisionTreeBuilder,
-      {this.thresholdProbability = 0.3});
+      {this.thresholdProbability = 0.1});
 
   DecisionTree<Sequence> plan(int length, EventKind previous) {
     final decisions = <Decision<Sequence>>[];
@@ -28,7 +28,7 @@ class ProbabilityThresholdTreePlanner implements TreePlanner {
           Iterable.generate(i, (_) => EventKind.unimportant).toList();
 
       final probability = markov.probabilityOfAll(events, previous);
-      if (probability < thresholdProbability) {
+      if (probability < thresholdProbability && i != 0) {
         decisions.add(Decision(Sequence(events), probability));
         break;
       }
