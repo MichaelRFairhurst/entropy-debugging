@@ -89,14 +89,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
 {\it
-Minimized reproductions of software issues are easier to debug. This paper
-presents a new algorithm "entropy debugging" faster than the predecessor
-"delta debugging". To do so, it treats the problem of crash minimization as a
-set minimization/simplification problem. The fitness tests themselves on
-possible subsets to consider can then be viewed as an information stream, which
-lends itself well to statistical analysis and data compression techniques. This
-means "entropy debugging" is likely to approach a hypothetical lower bound of
-performance given an accurate statistical model of the underlying information.}
+Debugging software is easier with examples of minimal inputs that reproduce
+defects. This paper introduces "entropy debugging'" an improved algorithm to
+simplify failure inducing inputs that outperforms its predecessor "delta
+debugging". By taking a statistical approach to a generalizable set minimization
+problem, we are able to treat the pass/fail results of fitness tests as a stream
+of binary information. Entropy debugging leverages data compression techniques
+to minimize this stream, meaning fewer fitness tests are performed and the
+algorithm approaches the upper bound of possible performance in both high
+entropy (already well minimized) and low entropy (not well minimized) cases.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -110,368 +111,550 @@ performance given an accurate statistical model of the underlying information.}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Introduction}
 
-Debugging a crash is easier with an example crashing input, and easiest when
-that example reproduction is minimal. These inputs can be found by users,
-developers, and/or tools like fuzz testing.
+Known reproductions of software defects often facilitate efficient debugging of
+that software, however, reproductions often contain extraneous input,
+complicating the troubleshooting process. Fuzz testing, a technique where
+randomized inputs are fed to a program in search of unwanted behavior such as
+crashes, is particularly known to produce overly complex defect-inducing inputs.
+Therefore, it is sensible to employing algorithms capable of minimizing these.
+Additionally, these algorthms can be valuable for for simplifying reproductions
+discovered by developers or end-users.
 
-When these crash reproductions are not minimized, it would be ideal if there
-were an algorithm that could create the minimized input. Removing one character
-(or symbol of some other kind) at a time from the input is a naive algorithm
-to reduce an input. If the reproduction is small and the crash reporduces
-quickly, this naive algorithm works.
+One approach to simplifying failure-inpucing input is employing a simple
+iterative algorithm which removes one character of that input at a time. For
+each character that is removed, the algorithm checks that the program still
+exhibits the defect of interest with the simpler input, and in this case the
+extraneous character is removed.
 
-Delta Debugging\cite{dd} is another option. Delta Debugging resembles a binary
-search where large chunks of the input are removed at a time, potentially
-reducing the input greatly in few tests. However, Delta Debugging is slower than
-the naive approach when the input is already close to minimal. This fits the
-finding by Yu et. al that the usefulness of Delta Debugging can vary wildly in
-real world scenarios\cite{ddRealPerspectives}.
+Due to the complexity of real world programs, the removal
+of one character at the end of the input may affect the necessity of a character
+at the beginning. Consider a parser that crashes with unclosed parentheses given
+the input string: '(((()))'. None of the open parenthesis may be removed from
+the input without suppressing the crash until all closing parentheses are first
+removed. To produce higher qualitity minimizations, which we refer to as
+1-minimal (no single character may be removed from the reproduction without
+compromising it), the simple iterative algorithm can be iterated to a fixed
+point. This concept of n-minimality is defined by Zeller\cite{dd}.
 
-Hierarchical Delta Debugging\cite{hdd} is an option for cases where the input
-can be formed into a tree. Hierarchical Delta Debugging yields great results but
-not all simplifications can be treated as a tree, and the time spent turning the
-failure case into a tree-like structure may not be worth the improved
-performance. For instance, a greybox/blackbox fuzz testing framework does not
-understand the program it's fuzzing well enough to create a hierarchical
-structure of the failures it finds. And malformed inputs may only crash because
-the input violates the tree structure that the program expects (for instance, a
-parser may crash for a particular type of mismatched parenthesis). Lastly, Yu
-et. al found that both Hierarchical Delta Debugging did not yield definite
+% TODO: improve academic tone of "it is also worth noting"
+Reaching 1-minimality in this way requires $O(n^2)$ steps where $n$ is the size,
+of the failure-inducing input, and each step requires running the defective
+program, which may be computationally expensive. It is also worth noting that
+in real world use cases, extraneous input is also often clustered and
+may constitute the majority of the reproduction. A strategy that only removes
+one character at a time cannot exploit these patterns to achieve improved
+efficiency in real-world scenarios.
+
+Delta Debugging is an algorithm by Zeller\cite{dd} which can offer improved
+real-world performance by removing one or more characters per test against a
+target program. Delta Debugging resembles a binary
+search where at the nth stage, 1/nth of the failure-inducing input is deleted
+and checked against the target program. Eventually, one nth of the
+failure-inducing input will be a single character. At this
+point the behavior of the Delta Debugging algorithm matches the naive iterative
+algorithm so that a 1-minimal reproduction may be found.
+
+The bisection approach taken by Delta Debugging has the potential to
+greatly reduce a reproduction in few tests when the failure-inducing input
+contains large volumes of extraneous content. However, if a failure-inducing
+input is already close to minimal, the algorithm typically
+does not produce working reproductions when removing multiple characters. In
+cases where the algorithm is simplifying reproduction which are already close to
+1-minimal, Delta Debugging effectively functions as a slower version of the
+single character iteration algorithm. This inconsistency in potential performance
+is consistent with the finding by Yu et. al that the usefulness of Delta
+Debugging can vary wildly in real world scenarios\cite{ddRealPerspectives}.
+% TODO: read Yu et al for more info and a better sentence here.
+
+Hierarchical Delta Debugging\cite{hdd} is a proposed variation that may improve the
+effectiveness of these early steps in the Delta Debugging algorithm for certain
+target programs. HDD may be employed when the target program operates on
+tree-like data such as parsers and certain data decoders. A developer may create
+a module which produces an abstract syntax tree (AST) from a failure-inducing
+input. HDD then operates by removing branches of this tree, which is an
+effective approach to quickly reduce failure-inducing inputs in certain cases.
+This technique does require additional effort by the developer, and is less
+suitable for many programs such as image decoders. It also may be less useful
+to fuzz testers who wish to produce and simplify malformed inputs. Lastly, Yu
+et. al found that Hierarchical Delta Debugging did not yield definite
 improvements over Delta Debugging in efficiency in real world
 application\cite{ddRealPerspectives}.
 
-In spite of these issues, simplification of failure cases and simplification of
-fuzz corpora by code coverage measures are both still tasks performed by
-frameworks and those frameworks need algorithms with good performance.
+Modern "Grey Box" fuzz testing software presents a scenario that necessitates a
+simplification algorithm that efficiently reduces both noisy and highly reduced
+data samples.  Grey Box fuzz testing is a widely utilized and highly efficient
+technique to automate the discovery of defects in software. Grey box fuzz
+testing frameworks execute a target piece of software with code coverage
+collection enabled. This method is also known as "code coverage guided fuzz
+testing." This method involves maintaining a corpus of inputs which execute
+different code paths inside the target program. This corpus is then mangled and
+spliced to produce new candidate inputs, which are added to the corpus if the
+corresponding execution involves new branches in the target program. For
+example, if the target program is a compiler, one sample may hold a class
 
-Entropy Debugging is a new algorithm presented here which aims to achieve close
-to optimal average case performance for all types of inputs, by taking a
-statistical/information theory approach to the problem of set simplification
-over an arbitrary fitness test.
+these two samples eventually yields a method definition, which is added to the
+corpus. A minimized corpus is more likely to yield novel new samples during the
+random splicing process. Extraneous data, such as lengthy comments in the case
+of fuzz testing compilers, reduce the likelihood that splicing involves data of
+interest (e.g. the class and function definitions). Grey Box fuzz testing
+software may then wish to employ an algorithm which is capable of efficiently
+simplifying all samples before adding them to the corpus, where these
+unminimized samples range from nearly being 1-minimal, to containing large
+sections of extraneous input.
 
-\subsection{Formalizations}
+In this paper we present "Entropy Debugging," a new algorithm which demonstrates
+superior performance as compared to Delta Debugging in various scenarios.
+Through an information theory based approach, our algorithm achieves more
+efficient most of Zeller's original data examples\cite{dd} in significantly
+fewer tests. Moreover, our algorithm demonstrates near optimal performance on
+inputs which are already near 1-minimal. To support our claims we include
+quantitative results on generated data as well as Zeller's test cases. Based on
+these findings, we argue our algorithm represents a compelling choice for
+reducing failure-inducing inputs in various scenarios, and anticipate its
+effectiveness in other related areas as well.
 
-Delta Debugging\cite{dd} and the algorithm presented here are both algorithms
-that solve the following general problem.
+%% \subsection{Formalizations}
+%% 
+%% Delta Debugging\cite{dd} and the algorithm presented here are both algorithms
+%% that solve the following general problem.
+%% 
+%% \subsubsection{Set Minimization}
+%% We define the problem of \textbf{set minimization} as $sm(\alpha, t) = \alpha'$,
+%% where $\alpha$ is an ordered or unordered set, $t$ is a blackbox function, and
+%% $\alpha'$ is the smallest set $s$ such that $s \subset \alpha$ and $t(s)$.
+%% (Zeller's "local minimum"\cite{dd}).
+%% 
+%% Given that $t$ is an abritrary black box function, its performance is unbounded.
+%% Therefore an important measure of complexity of an algorithm performing set
+%% minimization is the number of invocations of $t$.
+%% 
+%% Set minimization is the true goal of both Delta Debugging and the algorithm
+%% presented in this paper, however, the complexity of $sm(\alpha, t)$ is
+%% $2^{|\alpha|}$\cite{dd}.
+%% 
+%% Therefore a different definition is needed for practical purposes; for this
+%% there is \textbf{n-minimality}\cite{dd}.
+%% 
+%% \subsubsection{1-minimality}
+%% 
+%% Zeller defines \textbf{n-minimality} as $min(\alpha, t, n) = \alpha'$ where
+%% $\forall c \subset \alpha \cdot |c| - |\alpha| \leq n \Rightarrow t(c)$.
+%% Zeller proposes that 1-minimality is the ideal target for an algorithm
+%% approximating set minimization.
+%% 
+%% In less formal terms, n-minimality can be defined as searching for a result
+%% where no n items in the set could be removed while still satisfying the test
+%% function. In the case of 1-minimal, this means that no individual item in
+%% the set can be removed on its own while satisfying $t$, though it is possible
+%% that some pair of entries in the set (or tuples of size $n > 1$) could be.
+%% 
+%% This paper disputes the value of 1-minimality, though the algorithm presented
+%% can help efficiently find 1-minimal results.
+%% 
+%% To do: link to disputing the value of 1-minimality
+%% 
+%% Finding a 1-minimal set is $O(n^2)$.
+%% 
+%% \subsubsection{Set Simplification}
+%% 
+%% There is also a new presented definition, which is core to the ideas presented
+%% in this paper. We define the problem of \textbf{set simplification} as
+%% $simplify(\alpha, t) = \alpha'$ as a subproblem of set minimization. In
+%% simplification, it is required that $t$ satisfies
+%% $\forall c \supset \alpha' \Rightarrow t(c)$.
+%% 
+%% \begin{theorem}
+%%   The worst case complexity of set simplification is $O(n)$.
+%% \end{theorem}
+%% 
+%% \begin{axiom}
+%%   $t(\alpha' \setminus {c})$ iff $c \in \alpha'$.
+%% \end{axiom}
+%% 
+%% \begin{axiom}
+%%   $|\alpha'| \leq |\alpha|$.
+%% \end{axiom}
+%% 
+%% \begin{lemma}
+%%   $simplify(\alpha, t) = \{ c | c \in \alpha, t(\alpha \setminus {c}) \}$
+%% \end{lemma}
+%% 
+%% %%% TODO: show that it takes *at least |alpha'| steps.
+%% 
+%% \begin{proof}
+%%   Since set simplification can be translated to a list comprehension on
+%%   $\alpha$, it cannot take more than $|\alpha|$ steps to find.
+%% \end{proof}
+%% 
+%% \begin{theorem}
+%%   The result of set simplification is also n-minimal for all n.
+%% \end{theorem}
+%% 
+%% \begin{proof}
+%%   Assume that $\alpha'$ is not n-minimal for some $n > 0$. That means
+%%   $\exists c \subset \alpha' \cdot |c| - |\alpha'| > n \land t(c)$. That
+%%   implies $|c| < |\alpha'|$. However, if $t(c)$ and $|c| < |\alpha'|$, then
+%%   $|\alpha'|$ is not the smallest $s$ such that $t(s)$. This is a contradiction.
+%%   Therefore if the set simplification result $\alpha'$ is n-minimal for all n.
+%% \end{proof}
+%% 
+%% In practice, few nontrivial tests satisfy the requirements to make set
+%% simplification applicable. However, this paper uses set simplification as a
+%% benchmark of algorithmic performance and suggests it as a good approximation for
+%% many use cases where set minimization is desired.
 
-\subsubsection{Set Minimization}
-We define the problem of \textbf{set minimization} as $sm(\alpha, t) = \alpha'$,
-where $\alpha$ is an ordered or unordered set, $t$ is a blackbox function, and
-$\alpha'$ is the smallest set $s$ such that $s \subset \alpha$ and $t(s)$.
-(Zeller's "local minimum"\cite{dd}).
+%% \subsection{Information Theory Approach}
+%% 
+%% The novel approach taken to find a better algorithm of approximating set
+%% minimization is to translate test function results into an information stream.
+%% This paper explores how that information stream can be compressed efficiently.
+%% 
+%% Expressing the problem as a data stream is easier from the lens of \textit{set
+%% simplification} than \textit{set minimization}. (Later,
+%% \textit{set minimization} will be compared to noisy data streams).
+%% 
+%% To do: eventually compare set minimization to noisy data streams.
+%% 
+%% From here on, this paper assumes that $\alpha$ is a \textit{totally ordered set}.
 
-Given that $t$ is an abritrary black box function, its performance is unbounded.
-Therefore an important measure of complexity of an algorithm performing set
-minimization is the number of invocations of $t$.
+\section{Improved Algorithm Design: A Data Compression Approach}
 
-Set minimization is the true goal of both Delta Debugging and the algorithm
-presented in this paper, however, the complexity of $sm(\alpha, t)$ is
-$2^{|\alpha|}$\cite{dd}.
+To construct an algorithm with improved efficiency, we apply optimistic
+assumptions that simplify the problem of reducing a failure-inducing input. By
+applying proper design considerations, these assumptions make it possible to
+produce data compression mappings which may be reinterpreted as test invocations
+in search of a 1-minimal failure inducing input. Our algorithm demonstrates high
+real-world performance even when these optimistic assumptions do not hold, as
+evidenced by quantatative data analysis conducted in this study. The following
+section provides a detailed overview of our information-theory based approach.
 
-Therefore a different definition is needed for practical purposes; for this
-there is \textbf{n-minimality}\cite{dd}.
+For this section we introduce the concept of a minimal ordered set $\alpha$. We
+define $\alpha$ to be the smallest possible ordered set which satisfies
+condition $f(\alpha') = true$ for some function $f$. To facilitate algorithm
+design, we assume that any superset $\alpha'$ of the minimal set $\alpha$ also
+satisfies the condition $f(\alpha') = true$. These definitions and assumptions
+form a foundation for our proposed problem of set simplification. In this
+problem, $\alpha'$ is a known non-minimal reproduction of a defect, and $f(i)$
+is true when the program of interest crashes in the relevant manner given input
+$i$. The objective of our algorithm is to find the minimal reproduction,
+represented by $\alpha$, in minimal invocations of function $f$.
 
-\subsubsection{1-minimality}
+\subsection{Simplification Stream Forms and Performance Lower Bounds}
 
-Zeller defines \textbf{n-minimality} as $min(\alpha, t, n) = \alpha'$ where
-$\forall c \subset \alpha \cdot |c| - |\alpha| \leq n \Rightarrow t(c)$.
-Zeller proposes that 1-minimality is the ideal target for an algorithm
-approximating set minimization.
+Simplifying a non-minimal set $\alpha'$ involves identifying the important and
+unimportant members within $\alpha'$. In order to leverage data compression
+techniques in the search for the minimal set $\alpha$ it is necessary to
+translate $\alpha$ into a binary stream.
 
-In less formal terms, n-minimality can be defined as searching for a result
-where no n items in the set could be removed while still satisfying the test
-function. In the case of 1-minimal, this means that no individual item in
-the set can be removed on its own while satisfying $t$, though it is possible
-that some pair of entries in the set (or tuples of size $n > 1$) could be.
+We introduce the concept of \textit{simplification stream form}, which
+represents each member $e$ in $\alpha'$ as "$i$" if $e \in \alpha$ and "$u$" if
+$e \notin \alpha$. For example, a non-minimal set $\alpha'$ which contains three
+"important" members is expressed as $iii$ in simplification stream form. Three
+unimportant members is expressed as $uuu$. A pair of important members followed
+by a pair of unimportant members is represented as $iiuu$. This form enables the
+application of information theory techniques to the problem of simplifying
+failure-inducing input.
 
-This paper disputes the value of 1-minimality, though the algorithm presented
-can help efficiently find 1-minimal results.
+The problem of minimizing a non-minimal failure-inducing input $\alpha'$ can
+therefore be expressed as a search for $ssf(\alpha')$ in as few invocations of
+test function $f$ as possible. The simplification stream form encapsulates all
+the essential information required to derive the minimized input $\alpha$ from
+$\alpha'$ without additional invocations of $f$.
 
-To do: link to disputing the value of 1-minimality
+Simplification stream forms also make clear an upper bound on the maximum steps
+required by a simplification algorithm. The simplification stream form of any
+input can always be derived in $|\alpha'|$ steps, where at every $i$th step
+invokes test function $f$ with the $i$th member of $\alpha'$ is removed.
 
-Finding a 1-minimal set is $O(n^2)$.
+$ssf(\alpha') = [f(\alpha[0:i] + \alpha'[i+1:L]) \textit{for} i \textit{in range}(0, L)]$
 
-\subsubsection{Set Simplification}
+Algorithms such as Delta Debugging, a predecessor to our approach, have
+demonstrated the ability to minimize failure-inducing inputs in fewer steps than
+this maximum bound. However, the Delta Debugging algorithm will exceed this
+maximum bound on certain inputs, particularly those that are close to being
+1-minimal. Our algorithm is designed not to exceed this bound.
 
-There is also a new presented definition, which is core to the ideas presented
-in this paper. We define the problem of \textbf{set simplification} as
-$simplify(\alpha, t) = \alpha'$ as a subproblem of set minimization. In
-simplification, it is required that $t$ satisfies
-$\forall c \supset \alpha' \Rightarrow t(c)$.
+\subsubsection{Simplification Stream Forms and Entropy}
 
+Simplification stream forms possess a key property from the field of information
+theory: Entropy. The entropy of a simplification stream form represents the
+amount of information contained in it, and can be seen as the minimum number of
+yes or no questions required to derive the form. When $ssf(\alpha')$ is low
+entropy and contains limited information, it suggests the potential to reduce
+$\alpha'$ in fewer than $|\alpha'|$ invocations of $f$. Conversely, high entropy
+indicates that the minimum execution steps to reduce $\alpha'$ may be close to
+the maximum bound of steps to reduce it.
+
+Considering the practical implications and limitations, we propose the use of
+of entropy to establish a lower bound the required steps to simplify a
+failure-inducing input. It is important to note that the validity of this
+measure as a lower bound depends heavily on the exact properties and constraints
+of the test function $f$, as well as further developments in the field. However,
+we propose that $S(ssf(\alpha'))$ represents a practical lower bound on the
+fewest steps required to minimize the failure-inducing input $\alpha'$, where
+the entropy function $S$ quantifies the information contained in $ssf(\alpha')$.
+
+Quantifying the entropy of a simplification stream is a statistical process that
+is discussed in detail later in this study.
+
+\subsubsection{Lower Bounds of Near-Minimal Inputs}
+
+The entropy of a simplification stream form is only one lower bound in our
+problem domain. Consider the simplification stream form of 1-minimal failure
+inducing input $\alpha$. Every member of $\alpha$ is important by definition.
+Therefore the simplification stream form of $\alpha$ is $iii...i$ with a length
+of $n$ where $n = |\alpha|$. This simplification stream form has very low
+entropy, however, it cannot be distinguished from other simplification stream
+forms in fewer than $n$ tests.
+
+%TODO: ChatGPT doesn't seem 100% satisfied with this proof.
 \begin{theorem}
-  The worst case complexity of set simplification is $O(n)$.
+  Let $\alpha$ be the minimal failure-inducing input and $\alpha'$ be the
+  non-minimized failure-inducing input of length $L$.
+
+  The simplification stream form $s$ of input $\alpha'$ cannot be determined in
+  fewer than $n$ invocations of $f$ where $n$ is the length of $\alpha$.
 \end{theorem}
 
-\begin{axiom}
-  $t(\alpha' \setminus {c})$ iff $c \in \alpha'$.
-\end{axiom}
-
-\begin{axiom}
-  $|\alpha'| \leq |\alpha|$.
-\end{axiom}
-
 \begin{lemma}
-  $simplify(\alpha, t) = \{ c | c \in \alpha, t(\alpha \setminus {c}) \}$
+  If $L = 1$, then $f({})$ will evaluate to $true$ iff $\alpha$ is ${}$ and
+  $false$ iff $\alpha$ is $\alpha'$. This uniquely determines $s$.
 \end{lemma}
 
-%%% TODO: show that it takes *at least |alpha'| steps.
+\begin{lemma}
+  Let $s'$ be a simplification stream form of length $L - 1$, and let tests
+  $f(i_0), f(i_1), \ldots f(i_n')$ be the minimal set of tests to uniquely
+  determine $s$ to be one of $s'i$ or $s'u$. If $s$ is $s'i$ and test $f(i_x)$
+  which evaluates to $true$, then $\alpha[L - 1] \in i_x$. If $s'$ is $s'i$, and
+  $\alpha[L - 1] \notin i_x$, then $f(i_x)$ will always evaluate to false. This
+  represents a contradicton, as $f(i_x)$ was stated to be one of a minimal set
+  of tests, and a test which differentiates nothing cannot be part of the
+  minimal set of tests.
+
+  Assume $s$ is $s'u$ and one of the aforementioned minimal steps $f(i_x)$
+  evaluates to $true$. If $\alpha[L - 1] \notin i_x$, then this test proves $s$
+  cannot be $s'i$. If $\alpha[L - 1] \in i_x$, then this test may be substituted
+  with test $f(i_x - \alpha[L - 1])$, which will still evaluate to $true$, and
+  therefore the altered set of tests will still uniquely determine $s'$ and
+  disprove $s = s'i$.
+
+  Therefore, $s'i$ requires $n' + 1$ tests to differentiate against all other
+  possible simplification stream forms of length $L$.
+\end{lemma}
+
+\begin{corrollary}
+  The above argument can be applied where $s$ is one of $is'$ or $us'$, and can
+  be applied where there exists $s'$ is divided into two halves $s''$ and $s'''$,
+  and $s$ is one of $s''is'''$ or $s''us'''$.
+\end{corrollary}
 
 \begin{proof}
-  Since set simplification can be translated to a list comprehension on
-  $\alpha$, it cannot take more than $|\alpha|$ steps to find.
+  The theorem that a simplification stream form cannot be determined in fewer
+  than $n$ invocations of $f$ where $n$ is the length of $alpha$ is proved by
+  induction.
+
+  For any $s$, it can be determined in no fewer than $n' + 0$ steps where $s'$
+  has $n$ important components, or $n' + 1$ steps where $s'$ has $n - 1$
+  important components. Therefore, $s$ can be determined in a minimum of $n$
+  steps where $n$ is equal to the number of important components in $s$.
 \end{proof}
 
-\begin{theorem}
-  The result of set simplification is also n-minimal for all n.
-\end{theorem}
+This proof indicates that not all low entropy simplification stream forms
+indicate opportunities to more quickly simplify failure-inducing input. A
+simplification stream form such as $uuuiuuu$ may be possible to minimize in
+very few steps, however the opposite form $iiiuiii$ cannot.
 
-\begin{proof}
-  Assume that $\alpha'$ is not n-minimal for some $n > 0$. That means
-  $\exists c \subset \alpha' \cdot |c| - |\alpha'| > n \land t(c)$. That
-  implies $|c| < |\alpha'|$. However, if $t(c)$ and $|c| < |\alpha'|$, then
-  $|\alpha'|$ is not the smallest $s$ such that $t(s)$. This is a contradiction.
-  Therefore if the set simplification result $\alpha'$ is n-minimal for all n.
-\end{proof}
+\subsubsection{Calculating Lower Bound Performance}
 
-In practice, few nontrivial tests satisfy the requirements to make set
-simplification applicable. However, this paper uses set simplification as a
-benchmark of algorithmic performance and suggests it as a good approximation for
-many use cases where set minimization is desired.
+With these two lower bounds identified, we can combine them into a single, more
+precise equation:
 
-\subsection{Information Theory Approach}
+\begin{equation}
+	$lb(\alpha, \alpha') = min(|\alpha|, S(ssf(\alpha')))$
+\end{equation}
 
-The novel approach taken to find a better algorithm of approximating set
-minimization is to translate test function results into an information stream.
-This paper explores how that information stream can be compressed efficiently.
+\subsubsection{Statistical Models of Simplification Stream Forms}
 
-Expressing the problem as a data stream is easier from the lens of \textit{set
-simplification} than \textit{set minimization}. (Later,
-\textit{set minimization} will be compared to noisy data streams).
+Quantifying the entropy of a non-minimized set $\alpha'$ requires dividing the
+simplification stream into discrete events $e$ and estimating probability
+$p(e)$.
 
-To do: eventually compare set minimization to noisy data streams.
+In the simplest statistical model, we say only $p(i) = c$ for some constant $c$.
+This model assumes only that each member of $\alpha'$ in stream simplification
+has a certain probability of being important, and inverse probability of being
+unimportant. This statistical model does not assume any correlation between the
+adjacent members $\alpha'$.
 
-From here on, this paper assumes that $\alpha$ is a \textit{totally ordered set}.
+In real world scenarios, important and unimportant sections of an input tend to
+be clustered into contiguous sections. This is true in the original examples
+provided by Zeller\cite{dd} and this matches our experience. In this paper, we
+propose the use of Markov transitions as a powerful model for predicting
+simplification stream forms to capture these correlations between the importance
+of neighboring characters in a failure-inducing input. A Markov transition model
+requires estimating probabilities $p(iu)$ and $p(ui)$.
 
-\subsubsection{Simplification as Information}
+\subsection{$f$-Guided Decision Trees}
 
-For each member $e_i \in \alpha'$, the "underlying state" can be viewed as
-important ($e_i \in \alpha'$) or unimportant ($e_i \notin \alpha'$). As a 
-character coding, this may look like $uuiuuiuui$. Of course, a better encoding
-is a binary encoding, $001001001$.
+Each bit of data in a compressed artifact provides information that the decoder
+uses to reconstruct the original content. This can be described as a process
+where all possible sets of original content are considered, and each bit in the
+compressed data narrows down the set of possibilities. Eventually, the original
+content is the only remaining possibility and the artifact has been fully
+decompressed.
 
-%%% this should be formalized.
-This binary encoding is has some significance. It represents the \textit{brute
-force encoding} of performing set minimization on the input. In other words, if
-each character is tested individually and in order for membership of $\alpha'$
-(by $t(\alpha \setminus {e_i})$), the ordered results of these invocations of
-$t$ will be true or false corresponding to the 0s and 1s above.
+In the case of simplifying failure-inducing input, we wish to create a decision
+tree in which every branch represents the result from a single invocation of
+our function $f$. The leaves of this tree should contain a simplification stream
+form. Reaching a leaf therefore allows us to derive the minimal failure-inducing
+input $\alpha$ from the non-minimal input $\alpha'$.
 
-The field of information theory suggests that this stream should be encodable
-in a more optimal encoding.
+We define $f$-guided decision trees as follows. Recall that $\alpha$ is the
+minimal subset of $\alpha'$ such that $f(\alpha) = true$, and the exact value
+$\alpha$ is not known. Let $ssf(\alpha', x)$ be the simplification stream form
+for a candidate minimal input $x \subseteq \alpha'$. For example, if $\alpha'$
+is $xy$, then $\alpha$ is one of ${}$, ${x}$, ${y}$, or ${xy}$, which have
+corresponding simplification stream forms $uu$, $iu$, $ui$, and $ii$. The
+simplification stream form function also allows for an inverse
+$ssf^{-1}(ssf(\alpha', x), \alpha') = x$ which produces the candidate minimum
+input associated with a candidate simplification stream form. With these
+definitions, let $\text{branch}(\text{left}, \text{right})$ be a branch in a
+valid $f$-guided decision tree. In this case there must exist a single test
+input $v$ such that the test $f(v)$ evaluates to $true$ if
+$\alpha \in ssf^{-1}(\alpha', S) \text{for all} S \text{in} \text{leaves}(\text{left})$,
+and $f(v)$ evaluates to false if
+$\alpha \in ssf^{-1}(\alpha', S) \text{for all} S \text{in} \text{leaves}(\text{right})$.
+In other words, there must be a single test execution that eliminates all
+leftward leaves as possible simplification stream forms of the input, or all
+rightward simplification stream forms of the input.
 
-In the example above, one such encoding would be $0=00, 1=1$. Under this
-encoding, the previous example can be compressed to $010101$, saving four bits
-of information.
+In this scenario, the average case performance of our algorithm in terms of
+invocations of function $f$ is equal to the depth of each leaf multiplied by
+the probability of its corresponding simplification stream form. For example,
+reaching a leaf of depth $3$ requires three invocations of $f$. If this leaf
+is selected $10\%$ of the time, it contributes on average $0.3$ executions of
+function $f$ to the overall cost of the algorithm. To optimize the performance
+of our algorithm, we wish to minimize the following sum:
 
-\subsubsection{Statistical Modeling of the Simplification Data}
+$\sum_{\text{leaf} \in \text{tree}} \text{depth}(\text{leaf}) * p(ssf(\text{leaf}))$
 
-Having a statistical model of the simplification data is required in order to
-create an optimal encoding of that data.
+The probability of a leaf being selected by the decision tree can be estimated
+by evaluating the probability of its simplification stream form for a given
+Markov transition model.
 
-The simplest statistical model of this data is merely having $p(e \in \alpha')$
-for any $e \in \alpha$.
+\subsubsection{Dividing Stream Simplification Forms}
 
-This model would not assume any correlation between the individual members of
-the minimal set. While this is reasonable given than $t$ is an arbritrary
-function, it does not match what is typical of real world scenarios.
+Constructing an $f$-guided decision tree containing all simplification stream
+forms of length $L$ becomes impractical for large values of $L$ due to the
+exponential growth of possible forms, reaching $2^L$. It is therefore a
+practical requirement to first divide $\alpha'$ into smaller segments.
 
-The cases given by Zeller\cite{dd} exemplify this. The simplest failure inducing
-inputs studied for \textit{delta debugging} typically represent contiguous
-subsets of the original input.
+Each decision tree should efficiently distinguish the simplification stream
+form for a subset of the unminimized input $\alpha'$ when evaluated. After all
+decision trees for all subsets have been evaluated, the complete simplification
+stream form of $\alpha'$ is discovered and the minimized form $\alpha$ may be
+easily derived.
 
-Therefore this paper suggests markov transitions as a simple but more powerful
-model. A set of markov transition probabilities (from $u$ to $i$ and $i$ to $u$)
-are powerful enough to capture correlation, discorrelation, and independence
-between bits in the data stream.
+One approach for dividing a stream form into segments is to choose a
+length $L' < L$, and divide $\alpha'$ into chunks of size $L'$. However, this
+approach is not well suited for low entropy non-minimized failure-inducing
+inputs. Consider an unreduced input $\alpha'$ of length $1,000$, with a
+corresponding minimized input $\alpha$ of length $1$. $L / L'$ segments of
+$\alpha'$ are each reduced by the execution of one decision tree. By design, the
+fewest number of invocations of $f$ required to evaluate an $f$-guided decision
+tree is $1$. Therefore, reducing $\alpha'$ requires a minimum of $L / L'$
+invocations of $f$, while the size of $L'$ is still limited by exponential
+growth. Effectively, the $1000$ character unminimized sample can only be reduced
+in small chunks such as $20$ characters at a time. This is undesirable when the
+unminimized input $\alpha'$ is sufficiently large and the minimized input
+$\alpha$ is sufficiently small.
 
-Now it is possible to create an optimal coding against this markov model.
+\subsubsection{Binary Run Length Encoding}
 
-\subsubsection{Optimal Markov Encoding}
+There is a more fitting approach that involves only a modest increase in design
+complexity, using a binary run length encoding. In our binary run length
+encoding, a simplification stream form may be expressed as a sequence of
+integers indicating the count of $u$s between each $i$. For example, $uuii$ is
+expressed as the integer sequence $2$ $0$, or two $u$s followed by an $i$ and
+then zero $u$s followed by an $i$.
 
-Given a markov model and an input length, it is now possible to construct an
-optimal encoding for the sequence using huffman coding. Where $\beta$ is the set
-of all possible sequences of items $u$ and $i$,
+We define the function $rl(\text{form})$ to equal the count of $u$ in a form if
+$\text{form}$ matches the expression $^u*i\$$. That is, $rl(i) = 0$,
+$rl(ui) = 1$, $rl(uui) = 2$, etc.
 
-$optimal = Huffman(\beta)$.
+With this binary run length coding, $\alpha'$ is divided into $n$ sections
+dynamically, where $n = |\alpha|$. Each decision tree therefore produces an
+integer result indicating the run length of the current section. For instance,
+a decision tree may decide between $0$ ($i$), $1$ ($ui$), $2$ ($uui$), \ldots up
+to some reasonable maximum integer. The probability of each run may be estimated
+by a suitable markov model, and a probabiltiy threshold may cap the maximum run
+length. Additionally, the maximum run length should not exceed the remaining
+length of $\alpha'$. Lastly, an arbitrary maximum can be chosen. Since the size
+of the tree grows linearly with run length, rather than exponentially, a larger
+maximum cap can be practically selected with this approach.
 
-If we had this code, we would be able to optimally represent inputs like
-$uuiuuiuui$, for any arbitrary length, given any arbitrary underlying markov
-model.
+Reducing each segment of an unminimized input $\alpha'$ involves use of a
+decision tree which must invoke the target function $f$ at least once. With
+sufficiently high caps on run length, these decision trees will be evaluated
+$n$ times where $n = |\alpha|$. This is a desirable property because this is
+exactly the upper bound of the maximum tests that should be required to simplify
+$\alpha'$.
 
-Note: this is optimal \textit{if the markov model is the best statistical model}.
-There may be other more accurate statistical models that lead to more optimal
-encodings still.
+\subsubsection{$f$-Guided Leaf Order}
 
-However, this approach is not scalable, as $|\beta| = 2^{|n|}$.
+An $f$-guided decision tree is guaranteed to be valid if its leaves, and those
+leaves' corresponding run length simplifications stream forms, follow the order
+relation $a \prec b \iff rl(a) < rl(b)$.
 
-\subsubsection{Simplification Chunks}
+For example, if a branch contains left leaves $ui$, $uui$, and the right
+contains $uuui$, $uuuui$, this is properly ordered. To evaluate this branch
+point in this tree, we may test the removal of the first three characters of
+$\alpha'$ by evaluating $f(\alpha[3:L])$. If $f(\alpha[3:L])$ evaluates to true,
+then $ssf(\alpha')$ begins with $uuu$ and therefore cannot be $ui$ or $uui$. If
+the test evaluates to $false$, then $ssf(\alpha')$ cannot begin with $uuu$, and
+must be one of $ui$ or $uui$. This is therefore a valid step in a valid
+$f$-guided decision tree. If, however, the left branch contains leaf $uuuuui$
+or the right branch contains leaf $i$, then the test $f(\alpha[3:L])$ will not
+always exclude the entire set of leftward leaves or the entire set of rightward
+leaves, and is not a valid $f$-guided tree.
 
-To simplify the construction of our huffman code, we must construct a smaller
-set of symbols that makes progress on the whole input. One possibility is to
-construct huffman codes over each "character" ($i$ and $u$) in the input. This
-would merely result in the unimproved encodings ($i=0$, $u=1$ or vice versa),
-regardless of the entropy of the markov model. This can be thought of as
-"quantization error," where an input entropy below 1 will still yield an average
-performance of at least 1 in a huffman tree.
-%%% Formalize this^
-
-There is a natural way to segment the simplification data that matches practical
-observations of real world use cases for these algorithms, as well as having
-this "quantization error" end up matching the worst case scenario of
-simplification.
-
-The best case performance of simplification is $O(|\alpha'|)$. It therefore is
-reasonable to choose the huffman code symbol sets such that any quantization
-error that results from the set having entropy less than 1, will not necessarily
-decrease algorithmic worst case performance.
-%%% Formalize this^
-
-It is therefore this paper's suggestion that huffamn codes be used to encode
-\textit{sequences of repeated $u$ ending in a single $i$ or end of input}, in
-the style of Golomb-Rice run-length encoding\cite{golombRice}.
-
-Here's such an encoding: $i=0$, $ui=10$, $uui=11$, $uu\epsilon=11$.
-
-This example is of course, the identity encoding.
-
-As an example of an improved encoding, our original example may be optimally
-encoded (with ..., $uui=0$, ...), to $000$.
-
-\subsubsection{Runnable Identity Encodings}
-
-Unfortunately, the problem of compressing our original simplification data is
-not yet done. The encodings created by huffman's algorithm are not guaranteed to
-create a \textit{runnable identity encoding}.
-
-Take the above example, where $uui=0$. This is not runnable in its indentic form.
-There is no single value $v$ such that $t(v)$ iff ${uui} \in \alpha'$. Through
-two tests this is possible (test that $t(\{i\}) \land \neg t(\{\}))$, however, those
-two tests imply the \textit{runnable encoding} for this sequence is $10$ and not
-$0$. Given that they do not share an identity, $uui=0$ is not a
-\textit{runnable identity encoding}.
-%%% Maybe need notation to signify t(ui) etc...
-
-\begin{theorem}
-  Huffman coding is not guaranteed to return a runnable identity encoding.
-\end{theorem}
-
-\begin{lemma}
-  If $p(i)=0.25$, $p(ui)=0.5$, and $p(uui)=0.25$, $huffman(\{i, ui, uui\})$
-  produces $ui=0$, $i=10$, $uui=11$.
-\end{lemma}
-
-\begin{axiom}
-  If this is a runnable identity encoding, then some value $v$ exists such that
-  $t(v)$ iff $ui \land \neg (i \lor uui)$.
-\end{axiom}
-
-\begin{axiom}
-  $t(v) = r$, and $r$ is either $true$ or $false$.
-\end{axiom}
-
-\begin{axiom}
-  $t(v)$ is false in all cases where $v \not\supset \alpha'$ $v$ and true in all
-  cases where $v \supset \alpha'$.
-\end{axiom}
-
-\begin{axiom}
-  $v \supset \alpha'$ or $v \not\supset \alpha'$.
-\end{axiom}
-
-\begin{axiom}
-  $\alpha$ must be at least three items $\{..., a, b, c, ...\}$
-\end{axiom}
-
-\begin{axiom}
-  $t(v)$ must be $r$ in the case that $b \in \alpha'$ and $a \notin \alpha'$.
-\end{axiom}
-
-\begin{axiom}
-  $t(v)$ must be $\neg r$ in the case then $a \in \alpha'$.
-\end{axiom}
-
-\begin{axiom}
-  $r$ may be true or false: if r is always true or always false then $t(v)$
-  distinguishes nothing.
-\end{axiom}
-
-\begin{lemma}
-  If $a \in v$ and $r = true$, $v \supset \alpha'$, so it is possible that
-  $a \in \alpha'$ or $a \notin \alpha'$. Since $r = true$ distinguishes between
-  $b \in \alpha'$ or $a \notin \alpha'$, it must be that $a \notin v$.
-\end{lemma}
-
-\begin{lemma}
-  Since $a \notin v$, $r = true$ implies that $a \notin \alpha'$. Therefore
-  whenever $r = true$ it must also be true that $b \in \alpha'$ in all cases.
-\end{lemma}
-
-\begin{lemma}
-  When $b \in \alpha'$ and $r = true$, then $v \supset \alpha'$, and therefore
-  also $b \in v$.
-\end{lemma}
-
-\begin{proof}
-  When $b \in v$ and $v \supset \alpha'$ and $b \notin \alpha'$, $r = true$,
-  which is a contradiction.
-\end{proof}
-%%% ^ this could *surely* be cleaned up.
-
-Constructing a runnable identity encoding requires constructing a decision tree
-in which every branch in the tree (or bit in the encoding) corresponds to a
-single invocation of $t$ for some derivable input $v$.
-
-For the sequence encoding described here, this is equivalent to an
-\textit{ordered tree} (that is to say, a tree whose leaves maintain a known
-ordering).
-
-There is a very simple ordering that ensures a
-\textit{runnable identity encoding}: given two symbols $a$ and $b$, we say 
-$a < b$ iff $|\{u | e \in a, e = u\}| < |\{u | e \in b, e = u\}|$ (that is, the
-symbols are ordered in terms of how many unimportant characters that symbol
-finds).
+Generally, test value $v$ for invocation $f(v)$ in such ordered trees is
+determinable by computing
+$d = \min_{\text{leaf} in \text{right}} rl(\text{leaf})$. This minimum integer
+value $d$ represents the fewest unimportant characters of all rightward cases,
+and exceeds maximum unimportant characters in all leftward cases. Therefore, if
+$f(\alpha'[d:L])$ evaluates to $true$, then none of input characters
+$\alpha'[0]$ through $\alpha'[d]$ are members of the minimal input $\alpha$,
+and one of the rightward leaves accurately describes the current segment. If
+$f(\alpha'[d:L])$ evaluates to $false$, then at least one of input characters
+$\alpha'[0]$ through $\alpha'[d]$ is a member of the minimal input $\alpha$, and
+instead one of the leftward leaves accurately describes the current segment.
 
 \begin{theorem}
-  An ordered tree over this relation is a \textit{runnable identity encoding}.
+  An $f$-guided decision tree of run length simplification stream forms is
+  guaranteed to be valid if the assocatiated forms of its leaves follow the
+  order $a \prec b \iff rl(a) < rl(b)$.
 \end{theorem}
 
 \begin{lemma}
-  Let our symbol set be $i$, $ui$, $uui$, $u..._ni$.
+  Let the leaves of our tree be $i$, $ui$, $uui$, $u..._ni$.
 \end{lemma}
 
 \begin{lemma}
-  There is some root of the tree $r = Branch(r', r'')$. Since the tree is
-  ordered, all symbols in $r'$ are $i$, $ui$, $uui$, ... $uuu..._ji$ for some $j$,
-  and all symbols in $r''$ are $uuu..._{j+1}i$, $uuu..._{j+2}i$, $uuu..._ni$.
+  For every branch in the tree, let $j$ be the integer such that for all left
+  leaves, $rl(ssf(leaf)) < j$ and for all right leaves $rl(ssf(leaf)) \geq j$.
+  This establishes that the leaves are properly ordered.
 \end{lemma}
 
 \begin{lemma}
-  $uuu..._ei$ "describes" $\alpha'$ when $\alpha[e + 1 + c] \in \alpha'$ (where
-  $c$ is the offset of the encoder in the data stream), and
-  $\forall w \leq e > 0 \rightarrow \alpha[w + c] \notin \alpha'$.
+  Let $c$ be a candidate minimum input of a runlength form such that
+  $c = ssf^{-1}(uuu...u_ei)$. If candidate $c$ is the actual minimum input
+  $\alpha$, then $\alpha'[e] \in \alpha$ and for all members $m = \alpha'[0:e]$,
+  $m \notin \alpha$.
 \end{lemma}
 
 \begin{lemma}
-  There is some value $v$ such that $t(v)$ is true for all possible $\alpha'$
-  such that $uuu..._{j+q}i$ "describes" $\alpha'$ where $q > 0$. Additionally,
-  for that value $v$, $t(v)$ is false for all $u..._{j+q}i$ where $q \leq 0$.
-  (Note that this implies the tree searches \textit{rightwards} on $true$).
-\end{lemma}
-
-\begin{lemma}
-  Assume $v$ is the smallest superset of all sets that are "described by"
-  $uuu..._{j+q}i$" for all $q > 0$. Since $\alpha[j + q + 1 + c] \in \alpha'$,
+  Assume $v$ is the smallest superset of all sets $ssf^{-1}(uuu...u_{q}i)$"
+  for all $q > j$. Since $\alpha[j + q] \in \alpha'$,
   then $\forall e > j + q + c \rightarrow e \in \alpha'$. Since $t(v)$ is true
   and $t(x) = x \supset \alpha'$, it holds that
   $\forall e > j + q + c \rightarrow e \in v$.
@@ -492,6 +675,39 @@ finds).
   \textit{runnable identity encoding}.
 \end{proof}
 
+
+\subsubsection{Huffman Coding}
+
+The Huffman coding algorithm produces a tree with minimum average depth for a
+set of symbols with corresponding probabilities. In the design of our algorithm,
+we explored whether Huffman Coding could generate optimal $f$-guided trees for
+an alphabet that consists of run-length codes ($i$, $ui$, $uui$, \ldots). We
+found that this is not the case without alteration to the Huffman algorithm.
+
+Huffman Coding is a greedy algorithm which takes the two least likely symbols
+$x$ and $y$ and removes them from the alphabet. A new symbol $branch(x, y)$ is
+inserted into the alphabet with associated probability
+$p(branch(x, y)) = p(x) + p(y)$. The Huffman algorithm repeats this until the
+alphabet has size $1$.
+
+%TODO: Make this better.
+For a huffman code to be a valid $f$-guided tree, then for each branch there
+must exist a single value $v$ such that $f(v)$ reduces the possible
+simplification stream forms of $\alpha'$ in agreement with the branch taken.
+%TODO wow this is bad
+
+%TODO Finish and/or rewrite this, and $f$-guided trees requires a working
+%definition not the trash I currently decided to run with for now.
+We prove that huffman codes are not all valid $f$-guided trees by example.
+Let $tree = \text{Huffman}({i, ui, uui})$. Let $p(i) = 0.2$, $p(uui) = 0.2)$,
+$p(ui) = 0.6$. The two least likely symbols are $i$ and $uui$, and therefore
+$tree = branch(ui, branch(i, uui))$. No value $v$ exists to guide the first
+branch which we prove by exhaustion. Let $\alpha' = {x, y, z}$. $f(x, y, z)$ is
+always true. $f({})$ is always false if $ssf(\alpha') \in {i, ui, uui}$.
+$f({x})$ is false if $ssf(\alpha') \in {ui, uui}$. $f({y})$ is true if
+$ssf(\alpha') \in {i, ii}$. 
+
+\subsubsection{$f$-Guided Leaf Ordering}
 \subsubsection{Optimal ordered decision trees}
 
 Much like huffman code, there must be an optimal ordered decision tree. The
