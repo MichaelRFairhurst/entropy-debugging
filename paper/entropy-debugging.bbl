@@ -16,12 +16,6 @@ Misherghi, G., and Su, Z., 2006.
 \newblock In Proceedings of the 28th International Conference on Software
   Engineering, ICSE ’06, Association for Computing Machinery, p.~142–151.
 
-\bibitem{golombRice}
-Malvar, H., 2006.
-\newblock ``Adaptive run-length/golomb-rice encoding of quantized generalized
-  gaussian sources with unknown statistics''.
-\newblock pp.~23 -- 32.
-
 \bibitem{informationGain}
 Quinlan, J.~R., 1986.
 \newblock ``Induction of decision trees''.

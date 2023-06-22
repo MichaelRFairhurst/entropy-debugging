@@ -32,6 +32,7 @@
 
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corrollary}[theorem]{Corrollary}
 \newtheorem{axiom}[theorem]{Axiom}
 
 %% The class has several options
@@ -98,6 +99,7 @@ of binary information. Entropy debugging leverages data compression techniques
 to minimize this stream, meaning fewer fitness tests are performed and the
 algorithm approaches the upper bound of possible performance in both high
 entropy (already well minimized) and low entropy (not well minimized) cases.
+}
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -470,7 +472,7 @@ With these two lower bounds identified, we can combine them into a single, more
 precise equation:
 
 \begin{equation}
-	$lb(\alpha, \alpha') = max(|\alpha|, H(ssf(\alpha')))$
+	lb(\alpha, \alpha') = max(|\alpha|, H(ssf(\alpha')))
 \end{equation}
 
 \subsubsection{Statistical Models of Simplification Stream Forms}
@@ -507,7 +509,7 @@ estimated as $L' = p(i) * L$. This yields a lower bound for minimizing failure
 inducing inputs that are modeled by markov chains as follows:
 
 \begin{equation}
-	$lb(M, \alpha') = max(p(i) * |\alpha'|, H(ssf(\alpha')))$
+	lb(M, \alpha') = max(p(i) * |\alpha'|, H(ssf(\alpha')))
 \end{equation}
 
 \subsection{$f$-Guided Decision Trees}
