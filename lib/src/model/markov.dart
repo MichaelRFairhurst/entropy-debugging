@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'package:entropy_debugging/src/model/sequence.dart';
+import 'package:entropy_debugging/src/model/entropy.dart';
 
 enum EventKind { important, unimportant, unknown }
 
@@ -22,20 +24,20 @@ enum EventKind { important, unimportant, unknown }
 /// the emission probabilities we can then guess when there is a certain
 /// likelihood of a sample being, say, 99% important.
 class MarkovModel {
-  /// The probability that unimportant events (characters in a string, for
-  /// instance) are followed by an important event.
+  /// The probability that an unimportant event (characters in a string, for
+  /// instance) is followed by an important event.
   final double pTransitionToImportant;
 
   /// The probability that an unimportant event (characters in a string, for
   /// instance) are followed by an unimportant event.
   double get pRepeatUnimportant => 1 - pTransitionToImportant;
 
-  /// The probability that unimportant events (characters in a string, for
-  /// instance) are followed by an important event.
+  /// The probability that an important events (characters in a string, for
+  /// instance) is followed by an unimportant event.
   double get pTransitionToUnimportant => 1 - pRepeatUnimportant;
 
-  /// The probability that an unimportant event (characters in a string, for
-  /// instance) are followed by an unimportant event.
+  /// The probability that an important event (characters in a string, for
+  /// instance) is followed by an important event.
   double get pRepeatImportant =>
       (pUnderlyingImportant - pUnderlyingUnimportant * pTransitionToImportant) /
       pUnderlyingImportant;
@@ -81,6 +83,30 @@ class MarkovModel {
     }
     return probability;
   }
+
+  /// Get the entropy of each state transition in this markov model.
+  double get entropyRate => pUnderlyingImportant *
+          (entropy(pTransitionToUnimportant) + entropy(pRepeatImportant)) +
+      pUnderlyingUnimportant *
+          (entropy(pTransitionToImportant) + entropy(pRepeatUnimportant));
+
+  /// Get the entropy of a sequence of state transitions with the specified
+  /// [length], which is the entropy of the starting state plus the [entropyRate]
+  /// for each subsequent event.
+  double entropyFor(int length) {
+    return entropy(pUnderlyingImportant) +
+        entropy(pUnderlyingUnimportant) +
+        entropyRate * (length - 1);
+  }
+
+  /// Get the lower bound of tests for simplifying an input of [length]. This
+  /// differs from entropy in that low entropy near-minimal samples have their
+  /// lower bound which is greater than entropy.
+  double lowerBound(int length) =>
+    max(entropyFor(length), pUnderlyingImportant * length);
+
+  @override
+  String toString() => "Markov matrix with probabilities $_probabilityMatrix";
 
   //double probabilityOf(Sequence sequence, SequenceKind beforeSequence,
   //    SequenceKind afterSequence) {

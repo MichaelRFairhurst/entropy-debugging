@@ -390,9 +390,9 @@ of entropy to establish a lower bound the required steps to simplify a
 failure-inducing input. It is important to note that the validity of this
 measure as a lower bound depends heavily on the exact properties and constraints
 of the test function $f$, as well as further developments in the field. However,
-we propose that $S(ssf(\alpha'))$ represents a practical lower bound on the
+we propose that $H(ssf(\alpha'))$ represents a practical lower bound on the
 fewest steps required to minimize the failure-inducing input $\alpha'$, where
-the entropy function $S$ quantifies the information contained in $ssf(\alpha')$.
+the entropy function $H$ quantifies the information contained in $ssf(\alpha')$.
 
 Quantifying the entropy of a simplification stream is a statistical process that
 is discussed in detail later in this study.
@@ -470,7 +470,7 @@ With these two lower bounds identified, we can combine them into a single, more
 precise equation:
 
 \begin{equation}
-	$lb(\alpha, \alpha') = min(|\alpha|, S(ssf(\alpha')))$
+	$lb(\alpha, \alpha') = max(|\alpha|, H(ssf(\alpha')))$
 \end{equation}
 
 \subsubsection{Statistical Models of Simplification Stream Forms}
@@ -492,6 +492,23 @@ propose the use of Markov transitions as a powerful model for predicting
 simplification stream forms to capture these correlations between the importance
 of neighboring characters in a failure-inducing input. A Markov transition model
 requires estimating probabilities $p(iu)$ and $p(ui)$.
+
+The entropy rate of a markov model $M$ is defined as
+
+$$H(M) = - \sum{ij} p(i) * p(ij) * log(p(ij))$$
+
+Therefore, the entropy of $ssf(\alpha')$ is the entropy of the initial state,
+summed with the entropy rate per subsequent states. Therefore,
+
+$$H(ssf(\alpha')) = H(M) * (L-1) - \sum{i} p(i) * log(p(i))$$
+
+Additionally, the length of the length of the minimal input $\alpha$ may be
+estimated as $L' = p(i) * L$. This yields a lower bound for minimizing failure
+inducing inputs that are modeled by markov chains as follows:
+
+\begin{equation}
+	$lb(M, \alpha') = max(p(i) * |\alpha'|, H(ssf(\alpha')))$
+\end{equation}
 
 \subsection{$f$-Guided Decision Trees}
 
@@ -520,9 +537,9 @@ input associated with a candidate simplification stream form. With these
 definitions, let $\text{branch}(\text{left}, \text{right})$ be a branch in a
 valid $f$-guided decision tree. In this case there must exist a single test
 input $v$ such that the test $f(v)$ evaluates to $true$ if
-$\alpha \in ssf^{-1}(\alpha', S) \text{for all} S \text{in} \text{leaves}(\text{left})$,
+$\alpha \in ssf^{-1}(\alpha', l) \text{for all} l \text{in} \text{leaves}(\text{left})$,
 and $f(v)$ evaluates to false if
-$\alpha \in ssf^{-1}(\alpha', S) \text{for all} S \text{in} \text{leaves}(\text{right})$.
+$\alpha \in ssf^{-1}(\alpha', l) \text{for all} l \text{in} \text{leaves}(\text{right})$.
 In other words, there must be a single test execution that eliminates all
 leftward leaves as possible simplification stream forms of the input, or all
 rightward simplification stream forms of the input.
@@ -636,25 +653,43 @@ instead one of the leftward leaves accurately describes the current segment.
 \end{theorem}
 
 \begin{lemma}
-  Let the leaves of our tree be $i$, $ui$, $uui$, $u..._ni$.
+  Let the minimal failure-inducing input $\alpha$ be a subset of the
+  non-minimized input $\alpha'$.
+
+  Let the leaves of our tree be runlength forms $rl(0)$ ($i$), $rl(1)$ ($ui$),
+  $rl(2)$ ($uui$), \ldots $rl(n)$ ($uu...u_ni)$.
+
+  Let there be an non-negative integer offset $p < |\alpha'|$.
+
+  Let each leaf $rl(x)$ correspond to all candidate sets such that
+  $c = ssf^{-1}(P \Vert rl(x) \Vert S)$ for any $P$, $S$, where $|P| = p$ and
+  $|ssf(c)| = |\alpha'|$.
+
+  Recall that our test function $f(v)$ is assumed to be defined as
+  $v \subseteq \alpha$. Our proof holds if for every branch of the tree there is
+  a test value $v$, such $v \supseteq \alpha$ when $\alpha$ is a leaf of the
+  left branch of the tree
 \end{lemma}
 
 \begin{lemma}
-  For every branch in the tree, let $j$ be the integer such that for all left
-  leaves, $rl(ssf(leaf)) < j$ and for all right leaves $rl(ssf(leaf)) \geq j$.
-  This establishes that the leaves are properly ordered.
+  For every branch in the tree, let $j$ be an integer such that all left leaves
+  are run lengths of form form $rl(x)$ where $x < j$, and all right leaves are
+  of form $rl(x)$ where $x \geq j$. This establishes that the leaves are
+  properly ordered.
 \end{lemma}
 
 \begin{lemma}
-  Let $c$ be a candidate minimum input of a runlength form such that
-  $c = ssf^{-1}(uuu...u_ei)$. If candidate $c$ is the actual minimum input
-  $\alpha$, then $\alpha'[e] \in \alpha$ and for all members $m = \alpha'[0:e]$,
-  $m \notin \alpha$.
+  Let $c$ be a candidate minimized input, corresponding to a runlength form
+  $rl(e)$, such that $c = ssf^{-1}(P \Vert rl(e) \Vert S)$. If candidate $c$ is
+  the actual minimum input $\alpha$, then $\alpha'[e] \in \alpha$ and for all
+  members $m = \alpha'[0:e]$, $m \notin \alpha$.
 \end{lemma}
 
 \begin{lemma}
-  Assume $v$ is the smallest superset of all sets $ssf^{-1}(uuu...u_{q}i)$"
-  for all $q > j$. Since $\alpha[j + q] \in \alpha'$,
+  Let $\alpha$ be $ssf^{-1}(uuu...u_{a}i)$" for some $a < n$. If $a < j$ then
+  one of 
+  $\alpha \in v$, 
+	Since $\alpha[j + q] \in \alpha'$,
   then $\forall e > j + q + c \rightarrow e \in \alpha'$. Since $t(v)$ is true
   and $t(x) = x \supset \alpha'$, it holds that
   $\forall e > j + q + c \rightarrow e \in v$.
@@ -1040,9 +1075,10 @@ starting point of comparison to Entropy Debugging.
     nodes near coords align={vertical},
     ]
 \addplot coordinates {(gcc1,726) (gcc2,7) (mozilla,83)};
-\addplot coordinates {(gcc1,272) (gcc2,18) (mozilla,51)};
-\addplot coordinates {(gcc1,355) (gcc2,19) (mozilla,59)};
-\legend{dd,edsimplify,edminimize}
+\addplot coordinates {(gcc1,288) (gcc2,18) (mozilla,51)};
+\addplot coordinates {(gcc1,369) (gcc2,19) (mozilla,59)};
+\addplot coordinates {(gcc1,252.8) (gcc2,7) (mozilla,28.6)};
+\legend{dd,edsimplify,edminimize,entropy}
 \end{axis}
 \end{tikzpicture}
 

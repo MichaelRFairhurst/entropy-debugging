@@ -58,4 +58,10 @@ class DistributionTracker {
   MarkovModel get markov => MarkovModel(
       1 - (hitsUnimportantRepeat + 1) / (trialsUnimportantRepeat + 2),
       1 - (hitsUnimportant + 1) / (trialsUnimportant + 2));
+
+  /// Functions like [markov], except it does not use the rule of succession to
+  /// fudge probabilities away from 100%.
+  MarkovModel finalizeMarkov() => MarkovModel(
+      1 - hitsUnimportantRepeat / trialsUnimportantRepeat,
+      1 - hitsUnimportant / trialsUnimportant);
 }

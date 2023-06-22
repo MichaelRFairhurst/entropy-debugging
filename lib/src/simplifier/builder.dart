@@ -17,6 +17,7 @@ import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 import 'package:entropy_debugging/src/simplifier/presampling.dart';
 import 'package:entropy_debugging/src/simplifier/presampling_async.dart';
 import 'package:entropy_debugging/src/simplifier/adaptive.dart';
+import 'package:entropy_debugging/src/simplifier/nonadaptive.dart';
 import 'package:entropy_debugging/src/simplifier/adaptive_async.dart';
 import 'package:entropy_debugging/src/planner/caching.dart';
 import 'package:entropy_debugging/src/planner/capped_size_tree.dart';
@@ -45,6 +46,9 @@ class SimplifierBuilder<T> extends _SimplifierBuilderBase<T, List<T>, bool> {
 
   AdaptiveSimplifier<T> _buildAdaptive() => _adaptiveSimplifier =
       AdaptiveSimplifier<T>.forTracker(tracker, _buildPlanner);
+
+  NonadaptiveSimplifier<T> _buildNonadaptive(MarkovModel model) =>
+      NonadaptiveSimplifier<T>(model, _buildPlanner(model));
 
   OneMinimalSimplifier<T> _buildOneMinimal({int lastDeletedOffset}) =>
       OneMinimalSimplifier<T>(lastDeletedOffset: lastDeletedOffset);
@@ -76,6 +80,8 @@ class AsyncSimplifierBuilder<T>
 
   AdaptiveAsyncSimplifier<T> _buildAdaptive() => _adaptiveSimplifier =
       AdaptiveAsyncSimplifier<T>.forTracker(tracker, _buildPlanner);
+
+  AdaptiveAsyncSimplifier<T> _buildNonadaptive(MarkovModel model) => throw "Not supported.";
 
   OneMinimalAsyncSimplifier<T> _buildOneMinimal({int lastDeletedOffset}) =>
       OneMinimalAsyncSimplifier<T>(lastDeletedOffset: lastDeletedOffset);
@@ -109,6 +115,8 @@ abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
 
   void adaptiveConsume() => andThen(_buildAdaptive());
 
+  void nonadaptiveConsume(MarkovModel model) => andThen(_buildNonadaptive(model));
+
   void profile([String label]) => _simplifier = (label == null
       ? ProfilingSimplifier<T, R, S>(_simplifier)
       : ProfilingSimplifier<T, R, S>(_simplifier,
@@ -137,6 +145,7 @@ abstract class _SimplifierBuilderBase<T, R extends FutureOr<List<T>>,
   }
 
   Simplifier<T, R, S> _buildAdaptive();
+  Simplifier<T, R, S> _buildNonadaptive(MarkovModel model);
   Simplifier<T, R, S> _buildPresampling(int count);
   Simplifier<T, R, S> _buildOneMinimal({int lastDeletedOffset});
   int Function() get _getLastDeletedOffset;

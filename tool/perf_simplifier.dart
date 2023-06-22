@@ -47,7 +47,9 @@ void tabulate(MarkovModel markov, Random random, int sampleSize, int length) {
     markov.pUnderlyingImportant,
     markov.pRepeatUnimportant,
     averageRuns,
-    averageMs
+    averageMs,
+    markov.lowerBound(length),
+    averageRuns / markov.lowerBound(length),
   ].join(','));
 }
 
