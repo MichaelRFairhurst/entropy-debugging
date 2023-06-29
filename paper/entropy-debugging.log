@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=latex 2023.6.22)  22 JUN 2023 16:56
+This is pdfTeX, Version 3.141592653-2.6-1.40.25 (TeX Live 2023) (preloaded format=latex 2023.6.22)  28 JUN 2023 21:30
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -722,34 +722,38 @@ Underfull \hbox (badness 1024) in paragraph at lines 360--365
  []
 
 [2] [3] [4]
-Underfull \hbox (badness 7451) in paragraph at lines 639--650
+Underfull \hbox (badness 7451) in paragraph at lines 641--652
 []\OT1/ptm/m/n/10 Generally, test value $\OML/ptmcm/m/it/10 v$ \OT1/ptm/m/n/10 
 for in-vo-ca-tion $\OML/ptmcm/m/it/10 f\OT1/ptmcm/m/n/10 (\OML/ptmcm/m/it/10 v\
 OT1/ptmcm/m/n/10 )$ \OT1/ptm/m/n/10 in
  []
 
 
-Underfull \hbox (badness 1661) in paragraph at lines 639--650
+Underfull \hbox (badness 1661) in paragraph at lines 641--652
 \OT1/ptm/m/n/10 such or-dered trees is de-ter-minable by com-put-ing $\OML/ptmc
 m/m/it/10 d \OT1/ptmcm/m/n/10 =
  []
 
 
-Underfull \hbox (badness 2005) in paragraph at lines 684--688
-\OT1/ptm/m/it/10 re-spond-ing to a run-length form $\OML/ptmcm/m/it/10 rl\OT1/p
-tmcm/m/n/10 (\OML/ptmcm/m/it/10 e\OT1/ptmcm/m/n/10 )$\OT1/ptm/m/it/10 , such th
-at $\OML/ptmcm/m/it/10 c \OT1/ptmcm/m/n/10 =
+Underfull \hbox (badness 1005) in paragraph at lines 733--740
+\OT1/ptm/m/n/10 trees. Let $\OML/ptmcm/m/it/10 tree \OT1/ptmcm/m/n/10 = []([])$
+\OT1/ptm/m/n/10 . Let $\OML/ptmcm/m/it/10 p\OT1/ptmcm/m/n/10 (\OML/ptmcm/m/it/1
+0 i\OT1/ptmcm/m/n/10 ) = 0\OML/ptmcm/m/it/10 :\OT1/ptmcm/m/n/10 2$\OT1/ptm/m/n/
+10 ,
  []
 
 [5]
-Underfull \hbox (badness 1112) in paragraph at lines 807--807
+Underfull \hbox (badness 1112) in paragraph at lines 841--841
 [] []\OT1/ptm/b/n/10 if $\OML/ptmcm/m/it/10 pSmallest \OT1/ptmcm/m/n/10 = \OML/
 ptmcm/m/it/10 null$ \OT1/ptm/m/n/10 or $\OML/ptmcm/m/it/10 pCandidate < pSmalle
 st$
  []
 
-[6] [7]
-Underfull \hbox (badness 10000) in paragraph at lines 998--999
+[6]
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [7]
+Underfull \hbox (badness 10000) in paragraph at lines 1042--1043
 [] []$\OML/ptmcm/m/it/10 p[] \OMS/pzccm/m/n/10   f\OML/ptmcm/m/it/10 p\OT1/ptmc
 m/m/n/10 (\OML/ptmcm/m/it/10 u\OMS/pzccm/m/n/10 j\OML/ptmcm/m/it/10 state\OT1/p
 tmcm/m/n/10 ) \OMS/pzccm/m/n/10 ^^C \OML/ptmcm/m/it/10 p\OT1/ptmcm/m/n/10 (\OML
@@ -767,19 +771,25 @@ File: ./figure//generated_small.eps Graphic file (type eps)
 File: ./figure//generated_smallest.eps Graphic file (type eps)
 
 <./figure//generated_smallest.eps>
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1249.
+
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [9]
-[10] (./entropy-debugging.bbl) [11
+[10] (./entropy-debugging.bbl [11]) [12
 
 ] (./entropy-debugging.aux) ) 
 Here is how much of TeX's memory you used:
- 23440 strings out of 476026
- 619625 string characters out of 5790043
- 1882385 words of memory out of 5000000
- 43531 multiletter control sequences out of 15000+600000
- 527948 words of font info for 64 fonts, out of 8000000 for 9000
+ 24033 strings out of 476026
+ 631443 string characters out of 5790043
+ 2095385 words of memory out of 5000000
+ 44124 multiletter control sequences out of 15000+600000
+ 531636 words of font info for 72 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  99i,15n,103p,1026b,2249s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
-Output written on entropy-debugging.dvi (11 pages, 139092 bytes).
+Output written on entropy-debugging.dvi (12 pages, 632412 bytes).

@@ -43,7 +43,7 @@
 %  cleanfoot - take out copyright info in footer leave page number
 %  cleanhead - take out the conference banner on the title page
 %  titlepage/notitlepage - put in titlepage or leave out titlepage
-%  
+%
 %% The default is oneside, onecolumn, 10pt, final
 
 
@@ -54,7 +54,7 @@
     \affiliation{
 	Google Inc.,
     Email: mfairhurst@google.com
-    }	
+    }
 }
 
 %%% second author
@@ -72,7 +72,7 @@
 %%%%%% add more entries for additional authors
 %%%\author{Third Co-author\\
 %%%        Graduate Research Assistan, Student Member of ASME\\
-%%%       {\tensfb Fourth Co-author}\thanks{Address all correspondence for other issues to this author.} 
+%%%       {\tensfb Fourth Co-author}\thanks{Address all correspondence for other issues to this author.}
 %%%    \affiliation{Title, Member of ASME\\
 %%%        Department or Division Name\\
 %%%        Company or College Name\\
@@ -85,7 +85,7 @@
 
 \begin{document}
 
-\maketitle    
+\maketitle
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
@@ -216,82 +216,82 @@ reducing failure-inducing inputs in various scenarios, and anticipate its
 effectiveness in other related areas as well.
 
 %% \subsection{Formalizations}
-%% 
+%%
 %% Delta Debugging\cite{dd} and the algorithm presented here are both algorithms
 %% that solve the following general problem.
-%% 
+%%
 %% \subsubsection{Set Minimization}
 %% We define the problem of \textbf{set minimization} as $sm(\alpha, t) = \alpha'$,
 %% where $\alpha$ is an ordered or unordered set, $t$ is a blackbox function, and
 %% $\alpha'$ is the smallest set $s$ such that $s \subset \alpha$ and $t(s)$.
 %% (Zeller's "local minimum"\cite{dd}).
-%% 
+%%
 %% Given that $t$ is an abritrary black box function, its performance is unbounded.
 %% Therefore an important measure of complexity of an algorithm performing set
 %% minimization is the number of invocations of $t$.
-%% 
+%%
 %% Set minimization is the true goal of both Delta Debugging and the algorithm
 %% presented in this paper, however, the complexity of $sm(\alpha, t)$ is
 %% $2^{|\alpha|}$\cite{dd}.
-%% 
+%%
 %% Therefore a different definition is needed for practical purposes; for this
 %% there is \textbf{n-minimality}\cite{dd}.
-%% 
+%%
 %% \subsubsection{1-minimality}
-%% 
+%%
 %% Zeller defines \textbf{n-minimality} as $min(\alpha, t, n) = \alpha'$ where
 %% $\forall c \subset \alpha \cdot |c| - |\alpha| \leq n \Rightarrow t(c)$.
 %% Zeller proposes that 1-minimality is the ideal target for an algorithm
 %% approximating set minimization.
-%% 
+%%
 %% In less formal terms, n-minimality can be defined as searching for a result
 %% where no n items in the set could be removed while still satisfying the test
 %% function. In the case of 1-minimal, this means that no individual item in
 %% the set can be removed on its own while satisfying $t$, though it is possible
 %% that some pair of entries in the set (or tuples of size $n > 1$) could be.
-%% 
+%%
 %% This paper disputes the value of 1-minimality, though the algorithm presented
 %% can help efficiently find 1-minimal results.
-%% 
+%%
 %% To do: link to disputing the value of 1-minimality
-%% 
+%%
 %% Finding a 1-minimal set is $O(n^2)$.
-%% 
+%%
 %% \subsubsection{Set Simplification}
-%% 
+%%
 %% There is also a new presented definition, which is core to the ideas presented
 %% in this paper. We define the problem of \textbf{set simplification} as
 %% $simplify(\alpha, t) = \alpha'$ as a subproblem of set minimization. In
 %% simplification, it is required that $t$ satisfies
 %% $\forall c \supset \alpha' \Rightarrow t(c)$.
-%% 
+%%
 %% \begin{theorem}
 %%   The worst case complexity of set simplification is $O(n)$.
 %% \end{theorem}
-%% 
+%%
 %% \begin{axiom}
 %%   $t(\alpha' \setminus {c})$ iff $c \in \alpha'$.
 %% \end{axiom}
-%% 
+%%
 %% \begin{axiom}
 %%   $|\alpha'| \leq |\alpha|$.
 %% \end{axiom}
-%% 
+%%
 %% \begin{lemma}
 %%   $simplify(\alpha, t) = \{ c | c \in \alpha, t(\alpha \setminus {c}) \}$
 %% \end{lemma}
-%% 
+%%
 %% %%% TODO: show that it takes *at least |alpha'| steps.
-%% 
+%%
 %% \begin{proof}
 %%   Since set simplification can be translated to a list comprehension on
 %%   $\alpha$, it cannot take more than $|\alpha|$ steps to find.
 %% \end{proof}
-%% 
+%%
 %% \begin{theorem}
 %%   The result of set simplification is also n-minimal for all n.
 %% \end{theorem}
-%% 
+%%
 %% \begin{proof}
 %%   Assume that $\alpha'$ is not n-minimal for some $n > 0$. That means
 %%   $\exists c \subset \alpha' \cdot |c| - |\alpha'| > n \land t(c)$. That
@@ -299,24 +299,24 @@ effectiveness in other related areas as well.
 %%   $|\alpha'|$ is not the smallest $s$ such that $t(s)$. This is a contradiction.
 %%   Therefore if the set simplification result $\alpha'$ is n-minimal for all n.
 %% \end{proof}
-%% 
+%%
 %% In practice, few nontrivial tests satisfy the requirements to make set
 %% simplification applicable. However, this paper uses set simplification as a
 %% benchmark of algorithmic performance and suggests it as a good approximation for
 %% many use cases where set minimization is desired.
 
 %% \subsection{Information Theory Approach}
-%% 
+%%
 %% The novel approach taken to find a better algorithm of approximating set
 %% minimization is to translate test function results into an information stream.
 %% This paper explores how that information stream can be compressed efficiently.
-%% 
+%%
 %% Expressing the problem as a data stream is easier from the lens of \textit{set
 %% simplification} than \textit{set minimization}. (Later,
 %% \textit{set minimization} will be compared to noisy data streams).
-%% 
+%%
 %% To do: eventually compare set minimization to noisy data streams.
-%% 
+%%
 %% From here on, this paper assumes that $\alpha$ is a \textit{totally ordered set}.
 
 \section{Improved Algorithm Design: A Data Compression Approach}
@@ -554,7 +554,9 @@ is selected $10\%$ of the time, it contributes on average $0.3$ executions of
 function $f$ to the overall cost of the algorithm. To optimize the performance
 of our algorithm, we wish to minimize the following sum:
 
-$\sum_{\text{leaf} \in \text{tree}} \text{depth}(\text{leaf}) * p(ssf(\text{leaf}))$
+\begin{equation}
+	\sum_{\text{leaf} \in \text{tree}} \text{depth}(\text{leaf}) * p(ssf(\text{leaf})) \label{eq:treecost}
+\end{equation}
 
 The probability of a leaf being selected by the decision tree can be estimated
 by evaluating the probability of its simplification stream form for a given
@@ -648,78 +650,79 @@ $f(\alpha'[d:L])$ evaluates to $false$, then at least one of input characters
 $\alpha'[0]$ through $\alpha'[d]$ is a member of the minimal input $\alpha$, and
 instead one of the leftward leaves accurately describes the current segment.
 
-\begin{theorem}
-  An $f$-guided decision tree of run length simplification stream forms is
-  guaranteed to be valid if the assocatiated forms of its leaves follow the
-  order $a \prec b \iff rl(a) < rl(b)$.
-\end{theorem}
-
-\begin{lemma}
-  Let the minimal failure-inducing input $\alpha$ be a subset of the
-  non-minimized input $\alpha'$.
-
-  Let the leaves of our tree be runlength forms $rl(0)$ ($i$), $rl(1)$ ($ui$),
-  $rl(2)$ ($uui$), \ldots $rl(n)$ ($uu...u_ni)$.
-
-  Let there be an non-negative integer offset $p < |\alpha'|$.
-
-  Let each leaf $rl(x)$ correspond to all candidate sets such that
-  $c = ssf^{-1}(P \Vert rl(x) \Vert S)$ for any $P$, $S$, where $|P| = p$ and
-  $|ssf(c)| = |\alpha'|$.
-
-  Recall that our test function $f(v)$ is assumed to be defined as
-  $v \subseteq \alpha$. Our proof holds if for every branch of the tree there is
-  a test value $v$, such $v \supseteq \alpha$ when $\alpha$ is a leaf of the
-  left branch of the tree
-\end{lemma}
-
-\begin{lemma}
-  For every branch in the tree, let $j$ be an integer such that all left leaves
-  are run lengths of form form $rl(x)$ where $x < j$, and all right leaves are
-  of form $rl(x)$ where $x \geq j$. This establishes that the leaves are
-  properly ordered.
-\end{lemma}
-
-\begin{lemma}
-  Let $c$ be a candidate minimized input, corresponding to a runlength form
-  $rl(e)$, such that $c = ssf^{-1}(P \Vert rl(e) \Vert S)$. If candidate $c$ is
-  the actual minimum input $\alpha$, then $\alpha'[e] \in \alpha$ and for all
-  members $m = \alpha'[0:e]$, $m \notin \alpha$.
-\end{lemma}
-
-\begin{lemma}
-  Let $\alpha$ be $ssf^{-1}(uuu...u_{a}i)$" for some $a < n$. If $a < j$ then
-  one of 
-  $\alpha \in v$, 
-	Since $\alpha[j + q] \in \alpha'$,
-  then $\forall e > j + q + c \rightarrow e \in \alpha'$. Since $t(v)$ is true
-  and $t(x) = x \supset \alpha'$, it holds that
-  $\forall e > j + q + c \rightarrow e \in v$.
-\end{lemma}
-
-\begin{lemma}
-  Assume that $\forall e \leq j + q + c \rightarrow e \notin v$. In this case,
-  $v$ is not a superset of any set "described by" any $uuu...{j-1}$. Therefore,
-  the there is some value $v$ that bisects all symbols in one invocation of $t$.
-  (Once again, note that this implies \textit{rightwards} traversal on $true$).
-\end{lemma}
-
-\begin{proof}
-  Since a value $v$ exists which bisects the symbol set $i$, $ui$, $uui$, ...
-  $uuu..._ji$, $uuu..._{j+1}i$, ... $uuu..._ni$ for any $j$ given $t(v)$, this
-  problem is functionally equivalent to any ordered decision tree on integers
-  using $>$, and the resulting tree will be equivalent to a
-  \textit{runnable identity encoding}.
-\end{proof}
-
+% Maybe we prove this. I think not.
+%\begin{theorem}
+%  An $f$-guided decision tree of run length simplification stream forms is
+%  guaranteed to be valid if the assocatiated forms of its leaves follow the
+%  order $a \prec b \iff rl(a) < rl(b)$.
+%\end{theorem}
+%
+%\begin{lemma}
+%  Let the minimal failure-inducing input $\alpha$ be a subset of the
+%  non-minimized input $\alpha'$.
+%
+%  Let the leaves of our tree be runlength forms $rl(0)$ ($i$), $rl(1)$ ($ui$),
+%  $rl(2)$ ($uui$), \ldots $rl(n)$ ($uu...u_ni)$.
+%
+%  Let each leaf $rl(x)$ correspond to all candidate sets such that
+%  $c = ssf^{-1}(P \Vert rl(x) \Vert S)$ for any $P$, $S$, where $|P| = p$ and
+%  $|ssf(c)| = |\alpha'|$.
+%
+%  Recall that our test function $f(v)$ is assumed to be defined as
+%  $v \subseteq \alpha$. Our proof holds if for every branch of the tree there is
+%  a test value $v$, such $v \supseteq \alpha$ when $\alpha$ is a leaf of the
+%  left branch of the tree
+%\end{lemma}
+%
+%\begin{lemma}
+%  For every branch in the tree, let $j$ be an integer such that all left leaves
+%  are run lengths of form form $rl(x)$ where $x < j$, and all right leaves are
+%  of form $rl(x)$ where $x \geq j$. This establishes that the leaves are
+%  properly ordered.
+%
+%  Let test input $v = \alpha'[0:p] \Vert \alpha[p+j:L]$.
+%\end{lemma}
+%
+%\begin{lemma}
+%  Let $c$ be a candidate minimized input, corresponding to a runlength form
+%  $rl(e)$, such that $c = ssf^{-1}(P \Vert rl(e) \Vert S)$. If candidate $c$ is
+%  the actual minimum input $\alpha$, then $\alpha'[e] \in \alpha$ and for all
+%  members $m = \alpha'[0:e]$, $m \notin \alpha$.
+%\end{lemma}
+%
+%\begin{lemma}
+%  Let $\alpha$ be $ssf^{-1}(uuu...u_{a}i)$" for some $a < n$. If $a < j$ then
+%  one of
+%  $\alpha \in v$,
+%	Since $\alpha[j + q] \in \alpha'$,
+%  then $\forall e > j + q + c \rightarrow e \in \alpha'$. Since $t(v)$ is true
+%  and $t(x) = x \supset \alpha'$, it holds that
+%  $\forall e > j + q + c \rightarrow e \in v$.
+%\end{lemma}
+%
+%\begin{lemma}
+%  Assume that $\forall e \leq j + q + c \rightarrow e \notin v$. In this case,
+%  $v$ is not a superset of any set "described by" any $uuu...{j-1}$. Therefore,
+%  the there is some value $v$ that bisects all symbols in one invocation of $t$.
+%  (Once again, note that this implies \textit{rightwards} traversal on $true$).
+%\end{lemma}
+%
+%\begin{proof}
+%  Since a value $v$ exists which bisects the symbol set $i$, $ui$, $uui$, ...
+%  $uuu..._ji$, $uuu..._{j+1}i$, ... $uuu..._ni$ for any $j$ given $t(v)$, this
+%  problem is functionally equivalent to any ordered decision tree on integers
+%  using $>$, and the resulting tree will be equivalent to a
+%  \textit{runnable identity encoding}.
+%\end{proof}
 
 \subsubsection{Huffman Coding}
 
-The Huffman coding algorithm produces a tree with minimum average depth for a
-set of symbols with corresponding probabilities. In the design of our algorithm,
-we explored whether Huffman Coding could generate optimal $f$-guided trees for
-an alphabet that consists of run-length codes ($i$, $ui$, $uui$, \ldots). We
-found that this is not the case without alteration to the Huffman algorithm.
+The Huffman coding algorithm takes an alphabet of symbols with corresponding
+probabilities, and produces the optimal decision tree to discover these symbols
+with the minimum average depth. In the design of our algorithm, we investigated
+whether Huffman Coding could generate optimal \textit{$f$-guided trees} for an
+alphabet composed of run-length codes ($i$, $ui$, $uui$, \ldots). We found
+that this is not the case without alteration to the Huffman algorithm.
 
 Huffman Coding is a greedy algorithm which takes the two least likely symbols
 $x$ and $y$ and removes them from the alphabet. A new symbol $branch(x, y)$ is
@@ -727,34 +730,57 @@ inserted into the alphabet with associated probability
 $p(branch(x, y)) = p(x) + p(y)$. The Huffman algorithm repeats this until the
 alphabet has size $1$.
 
-%TODO: Make this better.
-For a huffman code to be a valid $f$-guided tree, then for each branch there
-must exist a single value $v$ such that $f(v)$ reduces the possible
-simplification stream forms of $\alpha'$ in agreement with the branch taken.
-%TODO wow this is bad
+The resulting huffman codes are not all valid $f$-guided trees. Let
+$tree = \text{Huffman}({i, ui, uui})$. Let $p(i) = 0.2$, $p(uui) = 0.2)$, and
+$p(ui) = 0.6$. The two least likely symbols $i$ and $uui$ are combined into a
+branch in the first step of the algorithm, and therefore
+$tree = branch(ui, branch(i, uui))$. This tree is not in $f$-Guided Leaf order,
+and there is no single value $v$ such that $f(v)$ discerns the $ui$ cases from
+the two alternatives.
 
-%TODO Finish and/or rewrite this, and $f$-guided trees requires a working
-%definition not the trash I currently decided to run with for now.
-We prove that huffman codes are not all valid $f$-guided trees by example.
-Let $tree = \text{Huffman}({i, ui, uui})$. Let $p(i) = 0.2$, $p(uui) = 0.2)$,
-$p(ui) = 0.6$. The two least likely symbols are $i$ and $uui$, and therefore
-$tree = branch(ui, branch(i, uui))$. No value $v$ exists to guide the first
-branch which we prove by exhaustion. Let $\alpha' = {x, y, z}$. $f(x, y, z)$ is
-always true. $f({})$ is always false if $ssf(\alpha') \in {i, ui, uui}$.
-$f({x})$ is false if $ssf(\alpha') \in {ui, uui}$. $f({y})$ is true if
-$ssf(\alpha') \in {i, ii}$. 
+\begin{table}[ht]
+  \centering
+  \caption{Possible tests discerning $ui$ from $i$, $uui$}
+  \label{tab:example}
+  \begin{tabular}{|c|c|c|c|c|}
+    \hline
+	$f(v)$ & $ui$ & $i$ & $uui$ \\
+    \hline
+	$f(\alpha'[0:3])$ & True & True & True \\
+    \hline
+	$f(\alpha'[1:3])$ & True & False & True \\
+    \hline
+	$f(\alpha'[0:1] \Vert \alpha'[2:3])$ & False & Depends & True \\
+    \hline
+	$f(\alpha'[0:2])$ & Depends & Depends & False \\
+    \hline
+	$f(\alpha'[2:3])$ & False & False & True \\
+    \hline
+	$f(\alpha'[0:1])$ & False & Depends & False \\
+    \hline
+	$f(\alpha'[1:2])$ & Depends & False & False \\
+    \hline
+	$f({})$ & False & False & False \\
+    \hline
+  \end{tabular}
+\end{table}
 
-\subsubsection{$f$-Guided Leaf Ordering}
+Entries with value "\textit{Depends}" indicate cases where the content following
+the runlength will determine the text result. For instance, if the
+simplification stream form of $\alpha'$ is one of $uii$, $uiu$, then the current
+runlength form is $ui$. In this case, the test evaluation $f(\alpha[1:2])$ will
+return $false$ in the $uii$ case, and true in the $uiu$ case. Therefore, neither
+$\alpha'[1:2]$ nor any other subsets of $\alpha'$ bisect the possible runlength
+forms in this way, and this huffman code is not a valid $f$-guided decision
+tree.
+
 \subsubsection{Optimal ordered decision trees}
 
-Much like huffman code, there must be an optimal ordered decision tree. The
-optimal ordered tree is the tree that has the lowest possible cost as defined by
-
-$$ cost(t) = \sum_{leaves of t} p(x) depth(x)$$
-
-A naive algorithm to brute force the lowest cost tree is
+It is possible to discover the optimal $f$-guided decision tree that minimizes
+the cost function defined by Equation \ref{eq:treecost} via a simple brute-force search:
 
 \begin{algorithm}
+  \label{alg:naivetree}
   \caption{Naively build optimal ordered decision tree}
   \begin{algorithmic}
     \IF{$|items| = 1$}
@@ -777,13 +803,21 @@ A naive algorithm to brute force the lowest cost tree is
   \end{algorithmic}
 \end{algorithm}
 
-This algorithm is not scalable, as it takes $O(n!)$ steps to complete. Howver,
-for small trees it is suitable for use and guarantees minimal tests.
+This completes in $O(n!)$ steps, and is therefore not suitable for building
+large trees, and alternatives are needed.
+
+Nevertheless, this algorithm may be used for small trees, and can be used as a
+means of comparison against other more efficient algorithms.
+
+We evaluated the average cost of this method via the cost defined by Equation
+\ref{eq:treecost}, and compared that to entropy. We found that for
+distinguishing runlength up to length 12, on randomly generated markov models,
+that this method produces trees within $17\%$ of entropy.
 
 \subsubsection{Ordered huffman coding}
 
-The following is a variant of huffman coding which completes in $O(n^2)$.
-However, does not produce optimal trees.
+We present Ordered Huffman Coding, a variation of Huffman coding which completes
+in $O(n^2)$ steps, and produces valid $f$-guided decision trees.
 
 Like standard huffman code, this algorithm finds the smallest pair and creates
 a branch. However, unlike standard huffman code, this algorithm ensures that the
@@ -815,21 +849,31 @@ iteration, this variant will put the branch into the tree in place.
   \end{algorithmic}
 \end{algorithm}
 
-In profiling, ordered huffman coding tended to produce close to optimal trees.
-%%% Measure this? Define this limit?
+Comparing this algorithm to Algorithm \ref{alg:naivetree} reveals that it does
+not produce optimal trees. However, in our comparison against our brute forced
+optimal trees up to length 12, the resulting trees were on average a mere 1\%
+less efficient.
+
+When measured against markov models with sets of up to 100 runlengths, we found
+the average cost via Equation \ref{eq:treecost} to be within 17\% of
+entropy.
 
 \subsubsection{Information Gain Coding}
 
-A common machine learning approach to generating decision trees is to split the
-data set recursively on maximum information gain\cite{informationGain}.
-Information gain $IG(Y, X)$ is the reduction of entropy $H(Y)$ given new
-information.
+The concept of information gain has been utilized to generate effective decision
+trees in the field of machine learning. This method involves splitting a data
+set recursively in order to maximize information gain at each
+branch\cite{informationGain}. Information gain $IG(Y, X)$ is the reduction of
+entropy $H(Y)$ given new information:
 
 $$IG(Y, X) = H(Y) - H(Y, X)$$
+
+where the conditional entropy $H(Y, X)$ is given by:
+
 $$H(Y, X) = \sum_{x \in X, y \in Y} -p(x, y) log_2 \frac{p(x, y)}{p(x)}$$
 
-Since this is an ordered tree, a decision $X$ has outcomes $\{y < n, y >= n\}$.
-In this case, join probabilities easily simplify. $p(y < n, y)$ corresponds to
+When utilized to produce trees with $f$-guided leaf ordering, a decision $X$ has outcomes $\{y < n, y >= n\}$.
+In this case, joint probabilities easily simplify. $p(y < n, y)$ corresponds to
 $p(y)$ if $y < n$, $p(y >= n, y)$ is $p(y)$ if $i >= n$, and $p(x', y)$ for all
 other $x'$ is $0$.
 
@@ -1152,6 +1196,104 @@ with around 99.9\% correlation.
 %%\label{fig_example1.ps}
 \end{figure}
 
+\definecolor{myred}{RGB}{220,75,50}
+\definecolor{myyellow}{RGB}{230,220,180}
+\definecolor{mygrey}{RGB}{150,170,170}
+
+\newcommand{\heatmap}[3]{
+  \begin{tikzpicture}[scale=0.35, font=\tiny]
+	\foreach \y [count=\n] in {#1} {
+      % heatmap tiles
+  	  \foreach \x [evaluate=\x as \color using int((\x-#3)*#2), count=\m] in \y {
+  	    \ifdim\x pt < 0.5pt
+          \node[minimum size=4mm, fill=mygrey, inner sep=0pt] at (\m,-\n) {NA};
+  	    \else
+          \node[fill=myred!\color!myyellow, minimum size=4mm, inner sep=0pt] at (\m,-\n) {\x};
+  	    \fi
+      }
+    }
+
+    \foreach \a [count=\i] in {0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95} {
+      % row labels
+      \node at (0,-\i) {\a };
+      % column labels
+      \node at (\i,0) {\a};
+    }
+
+    \node at (10,1) {$p(uu)$};
+    \node[rotate=90] at (-1,-10) {$p(u)$};
+  \end{tikzpicture}
+}
+
+% ED vs LB
+\heatmap{
+  {1.10,1.15,1.17,1.22,1.37,1.49,1.65,1.49,1.41,1.33,1.27,1.21,1.19,1.16,1.13,1.10,1.07,1.06,1.03},
+  {0,1.09,1.09,1.10,1.11,1.19,1.28,1.35,1.50,1.50,1.42,1.36,1.30,1.23,1.18,1.14,1.11,1.07,1.04},
+  {0,0,1.08,1.08,1.06,1.12,1.13,1.19,1.28,1.37,1.50,1.46,1.37,1.29,1.24,1.18,1.13,1.09,1.05},
+  {0,0,0,1.06,1.06,1.05,1.08,1.12,1.15,1.23,1.33,1.46,1.43,1.34,1.27,1.20,1.15,1.10,1.05},
+  {0,0,0,0,1.07,1.05,1.04,1.08,1.11,1.16,1.24,1.34,1.46,1.38,1.31,1.23,1.17,1.11,1.06},
+  {0,0,0,0,1.09,1.08,1.05,1.06,1.09,1.13,1.18,1.26,1.38,1.42,1.33,1.25,1.18,1.12,1.06},
+  {0,0,0,0,0,1.06,1.07,1.05,1.05,1.08,1.13,1.20,1.29,1.43,1.35,1.26,1.19,1.12,1.06},
+  {0,0,0,0,0,1.12,1.06,1.06,1.04,1.05,1.09,1.14,1.23,1.35,1.36,1.27,1.19,1.13,1.06},
+  {0,0,0,0,0,0,1.06,1.06,1.03,1.03,1.05,1.10,1.17,1.28,1.35,1.27,1.19,1.13,1.07},
+  {0,0,0,0,0,0,1.14,1.05,1.04,1.02,1.03,1.07,1.13,1.23,1.35,1.27,1.19,1.13,1.06},
+  {0,0,0,0,0,0,0,1.09,1.07,1.03,1.03,1.05,1.11,1.19,1.33,1.27,1.19,1.12,1.06},
+  {0,0,0,0,0,0,0,1.20,1.11,1.05,1.03,1.05,1.09,1.17,1.29,1.27,1.19,1.12,1.06},
+  {0,0,0,0,0,0,0,1.42,1.18,1.09,1.05,1.05,1.09,1.16,1.27,1.27,1.19,1.12,1.06},
+  {0,0,0,0,0,0,0,0,1.29,1.16,1.09,1.07,1.09,1.15,1.25,1.27,1.19,1.12,1.06},
+  {0,0,0,0,0,0,0,0,1.51,1.26,1.14,1.10,1.11,1.16,1.25,1.27,1.19,1.12,1.06},
+  {0,0,0,0,0,0,0,0,2.01,1.42,1.22,1.15,1.14,1.17,1.25,1.27,1.19,1.12,1.06},
+  {0,0,0,0,0,0,0,0,0,1.67,1.34,1.22,1.18,1.20,1.27,1.26,1.19,1.12,1.06},
+  {0,0,0,0,0,0,0,0,0,2.04,1.52,1.32,1.25,1.25,1.30,1.27,1.19,1.12,1.06},
+  {0,0,0,0,0,0,0,0,0,2.04,1.85,1.49,1.35,1.32,1.35,1.27,1.19,1.12,1.06},
+}{100}{1}
+
+% DD vs LB
+\heatmap{
+  {3.92,3.94,4.24,4.91,5.84,6.43,7.30,7.15,6.73,6.71,6.53,6.22,6.07,6.03,5.86,5.62,5.41,4.99,4.56},
+  {0,3.95,3.75,4.05,4.41,4.87,5.51,6.08,6.83,7.23,6.99,6.84,6.61,6.33,6.22,6.04,5.81,5.53,5.01},
+  {0,0,3.92,3.77,3.99,4.22,4.61,5.12,5.55,6.22,7.00,7.01,6.79,6.50,6.36,6.19,5.95,5.68,5.23},
+  {0,0,0,3.99,3.88,4.05,4.26,4.58,4.98,5.53,6.10,6.86,6.97,6.60,6.45,6.29,6.06,5.80,5.32},
+  {0,0,0,0,3.97,3.98,4.06,4.33,4.65,5.00,5.51,6.19,7.03,6.82,6.52,6.36,6.12,5.86,5.46},
+  {0,0,0,0,4.40,4.04,4.08,4.21,4.47,4.77,5.23,5.76,6.44,6.88,6.60,6.36,6.12,5.88,5.50},
+  {0,0,0,0,0,4.29,4.15,4.20,4.36,4.60,4.99,5.45,6.05,6.87,6.66,6.44,6.15,5.91,5.55},
+  {0,0,0,0,0,4.87,4.36,4.26,4.33,4.52,4.80,5.20,5.80,6.51,6.71,6.44,6.19,5.93,5.58},
+  {0,0,0,0,0,0,4.69,4.39,4.37,4.47,4.73,5.08,5.59,6.26,6.76,6.46,6.21,5.92,5.54},
+  {0,0,0,0,0,0,5.36,4.67,4.48,4.52,4.73,5.03,5.44,6.05,6.81,6.48,6.21,5.93,5.58},
+  {0,0,0,0,0,0,0,5.10,4.70,4.64,4.75,5.00,5.37,5.92,6.70,6.48,6.21,5.90,5.54},
+  {0,0,0,0,0,0,0,5.82,5.01,4.81,4.85,5.03,5.35,5.82,6.56,6.51,6.20,5.92,5.57},
+  {0,0,0,0,0,0,0,7.24,5.50,5.07,4.98,5.07,5.34,5.77,6.44,6.51,6.21,5.90,5.57},
+  {0,0,0,0,0,0,0,0,6.22,5.40,5.18,5.19,5.39,5.77,6.37,6.49,6.20,5.91,5.52},
+  {0,0,0,0,0,0,0,0,7.47,5.93,5.45,5.34,5.47,5.79,6.34,6.50,6.19,5.89,5.56},
+  {0,0,0,0,0,0,0,0,10.15,6.70,5.84,5.58,5.61,5.88,6.38,6.53,6.21,5.91,5.53},
+  {0,0,0,0,0,0,0,0,0,7.92,6.43,5.96,5.85,6.05,6.46,6.52,6.20,5.89,5.52},
+  {0,0,0,0,0,0,0,0,0,9.76,7.38,6.48,6.22,6.29,6.66,6.54,6.22,5.89,5.51},
+  {0,0,0,0,0,0,0,0,0,9.85,9.05,7.37,6.79,6.71,6.94,6.56,6.20,5.88,5.4},
+}{15}{2}
+
+% DD vs ED
+\heatmap{
+  {3.56,3.43,3.62,4.02,4.26,4.32,4.42,4.80,4.77,5.05,5.14,5.14,5.10,5.20,5.19,5.11,5.06,4.71,4.43},
+  {0,3.62,3.44,3.68,3.97,4.09,4.30,4.50,4.55,4.82,4.92,5.03,5.08,5.15,5.27,5.30,5.23,5.17,4.82},
+  {0,0,3.63,3.49,3.76,3.77,4.08,4.30,4.34,4.54,4.67,4.80,4.96,5.04,5.13,5.25,5.27,5.21,4.98},
+  {0,0,0,3.76,3.66,3.86,3.94,4.09,4.33,4.50,4.59,4.70,4.87,4.93,5.08,5.24,5.27,5.27,5.07},
+  {0,0,0,0,3.71,3.79,3.90,4.01,4.19,4.31,4.44,4.62,4.82,4.94,4.98,5.17,5.23,5.28,5.15},
+  {0,0,0,0,4.04,3.74,3.89,3.97,4.10,4.22,4.43,4.57,4.67,4.85,4.96,5.09,5.19,5.25,5.19},
+  {0,0,0,0,0,4.05,3.88,4.00,4.15,4.26,4.42,4.54,4.69,4.80,4.93,5.11,5.17,5.28,5.24},
+  {0,0,0,0,0,4.35,4.11,4.02,4.16,4.30,4.40,4.56,4.72,4.82,4.93,5.07,5.20,5.25,5.26},
+  {0,0,0,0,0,0,4.42,4.14,4.24,4.34,4.50,4.62,4.78,4.89,5.01,5.09,5.22,5.24,5.18},
+  {0,0,0,0,0,0,4.70,4.45,4.31,4.43,4.59,4.70,4.81,4.92,5.04,5.10,5.22,5.25,5.26},
+  {0,0,0,0,0,0,0,4.68,4.39,4.50,4.61,4.76,4.84,4.97,5.04,5.10,5.22,5.27,5.23},
+  {0,0,0,0,0,0,0,4.85,4.51,4.58,4.71,4.79,4.91,4.97,5.09,5.13,5.21,5.29,5.25},
+  {0,0,0,0,0,0,0,5.10,4.66,4.65,4.74,4.83,4.90,4.97,5.07,5.13,5.22,5.27,5.25},
+  {0,0,0,0,0,0,0,0,4.82,4.66,4.75,4.85,4.94,5.02,5.10,5.11,5.21,5.28,5.21},
+  {0,0,0,0,0,0,0,0,4.95,4.71,4.78,4.85,4.93,4.99,5.07,5.12,5.20,5.26,5.25},
+  {0,0,0,0,0,0,0,0,5.05,4.72,4.79,4.85,4.92,5.03,5.10,5.14,5.22,5.28,5.22},
+  {0,0,0,0,0,0,0,0,0,4.74,4.80,4.89,4.96,5.04,5.09,5.17,5.21,5.26,5.21},
+  {0,0,0,0,0,0,0,0,0,4.78,4.86,4.91,4.98,5.03,5.12,5.15,5.23,5.26,5.20},
+  {0,0,0,0,0,0,0,0,0,4.83,4.89,4.95,5.03,5.08,5.14,5.17,5.21,5.25,5.09},
+}{50}{3}
+
 \subsection{Fuzz Testing Coverage Corpus}
 
 Entropy Debugging was used to minify a fuzz testing corpus while maintaining the
@@ -1343,11 +1485,11 @@ produce runnable identity codes that could be used by Entropy Debugging.
 
 
 %%%
-%%%In order to get started in generating a two-column version of your paper, please format the document with 0.75in top margin, 1.5in bottom margin and 0.825in left and right margins.  Break the text into two sections one for the title heading, and another for the body of the paper.  
+%%%In order to get started in generating a two-column version of your paper, please format the document with 0.75in top margin, 1.5in bottom margin and 0.825in left and right margins.  Break the text into two sections one for the title heading, and another for the body of the paper.
 %%%
-%%%The format of the heading is not critical, on the other hand formatting of the body of the text is the primary goal of this exercise.  This will allow you to see that the figures are matched to the column width and font size of the paper.  The double column of the heading section is set to 1.85in for the first column, a 0.5in spacing, and 4.5in for the second column.  For the body of the paper, set it to 3.34in for both columns with 0.17in spacing, both are right justified. 
+%%%The format of the heading is not critical, on the other hand formatting of the body of the text is the primary goal of this exercise.  This will allow you to see that the figures are matched to the column width and font size of the paper.  The double column of the heading section is set to 1.85in for the first column, a 0.5in spacing, and 4.5in for the second column.  For the body of the paper, set it to 3.34in for both columns with 0.17in spacing, both are right justified.
 %%%
-%%%The information that is the focus of this exercise is found in 
+%%%The information that is the focus of this exercise is found in
 %%%section~\ref{sect_figure}.
 %%%Please use this template to format your paper in a way that is similar to the printed form of the Journal of Mechanical Design.  This will allow you to verify that the size and resolution of your figures match the page layout of the journal.  The ASME Journal of Mechanical Design will no longer publish papers that have the errors demonstrated here.
 %%%
@@ -1359,13 +1501,13 @@ produce runnable identity codes that could be used by Entropy Debugging.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%\section{Very Very Very Very Very Very Very Very Very Very Very Long Heading}
 %%%
-%%%The heading is boldface with upper and lower case letters. 
+%%%The heading is boldface with upper and lower case letters.
 %%%If the heading should run into more than one line, the run-over is not left-flushed.
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%\subsection{Second-Level Heading}
 %%%
-%%%The next level of heading is also boldface with upper and lower case letters. 
+%%%The next level of heading is also boldface with upper and lower case letters.
 %%%The heading is flushed left with the left margin. The spacing to the next heading is two line spaces.
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1377,7 +1519,7 @@ produce runnable identity codes that could be used by Entropy Debugging.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%\section{Use of SI Units}
 %%%
-%%%An ASME paper should use SI units.  When preference is given to SI units, the U.S. customary units may be given in parentheses or omitted. When U.S. customary units are given preference, the SI equivalent {\em shall} be provided in parentheses or in a supplementary table. 
+%%%An ASME paper should use SI units.  When preference is given to SI units, the U.S. customary units may be given in parentheses or omitted. When U.S. customary units are given preference, the SI equivalent {\em shall} be provided in parentheses or in a supplementary table.
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%\section{Footnotes\protect\footnotemark}
@@ -1415,19 +1557,19 @@ produce runnable identity codes that could be used by Entropy Debugging.
 %%%\end{picture}
 %%%\end{center}
 %%%\caption{The caption of a single sentence does not have period at the end}
-%%%\label{figure_ASME} 
+%%%\label{figure_ASME}
 %%%\end{figure}
-%%%%%%%%%%%%%%%%%%% end figure %%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%% end figure %%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%
-%%%In the following subsections, I have inserted figures that have been provided by authors in order to demonstrate what to avoid.  In each case the authors provided figures that are 3.25in wide and 600dpi in the .tif graphics format.  The papers containing these figures have been held from production due to their poor quality. 
+%%%In the following subsections, I have inserted figures that have been provided by authors in order to demonstrate what to avoid.  In each case the authors provided figures that are 3.25in wide and 600dpi in the .tif graphics format.  The papers containing these figures have been held from production due to their poor quality.
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%\subsection{The 1st Example of Bad Figure}
 %%%
 %%%%%%%%%%%%%%%%%%% begin figure %%%%%%%%%%%%%%%%%%%
 %%%%%% 3.34in is the maximum width you can have for a figure
-%%%\begin{figure} 
+%%%\begin{figure}
 %%%\centerline{\psfig{figure=figure/FMANU_MD_05_1107_11.ps,width=3.34in}}
 %%%\caption{Example taken from a paper that was held from production because the image quality is poor.  ASME sets figures captions in 8pt, Helvetica Bold.}
 %%%\label{fig_example1.ps}
@@ -1435,10 +1577,10 @@ produce runnable identity codes that could be used by Entropy Debugging.
 %%%%%%%%%%%%%%%%%%% end figure %%%%%%%%%%%%%%%%%%%
 %%%
 %%%In order to place the figure in this template using MSWord, select ÎéÎíInsert Picture from File,ÎéÎí and use wrapping that is  ÎéÎítop and bottom.ÎéÎí  Make sure the figure is 3.25in wide.
-%%% 
+%%%
 %%%Figure~`\ref{fig_example1.ps}
 %%%was taken from a recent paper that was held from publication, because the text is fuzzy and unreadable.  It was probably obtained by taking a screen shot of the computer output of the authorÎéÎ÷s software.  This means the original figure was 72dpi (dots per inch) on a computer screen.  There is no way to improve the quality such a low resolution figure.
-%%% 
+%%%
 %%%In order to understand how poor the quality of this figure is, please zoom in slightly, say to 200\%.  Notice that while the font of the paper is clear at this size, the font in the figures is fuzzy and blurred.  It is impossible to make out the small symbol beside the numbers along the abscissa of the graph.  Now consider the labels ÎéÎíTimeÎéÎí and ÎéÎíCost.ÎéÎí  They are clearly in fonts larger that the text of the article, yet the pixilation or rasterization, associated with low resolution is obvious. This figure must be regenerated at higher resolution to ensure quality presentation.
 %%%
 %%%The poor quality of this figure is immediately obvious on the printed page, and reduces the impact of the research contribution of the paper, and in fact detracts from the perceived quality of the journal itself.
@@ -1449,7 +1591,7 @@ produce runnable identity codes that could be used by Entropy Debugging.
 %%%\subsection{The 2nd Example of Bad Figure}
 %%%
 %%%%%%%%%%%%%%%%%%% begin figure %%%%%%%%%%%%%%%%%%%
-%%%\begin{figure} 
+%%%\begin{figure}
 %%%\centerline{\psfig{figure=figure/FMANU_MD_05_1272_5.ps,width=3.34in}}
 %%%\caption{While this figures is easily readable at a double column width of 6.5in, when it is shrunk to 3.25in column width the text is unreadable.   This paper was held from production.}
 %%%\label{fig_example2.ps}
@@ -1465,7 +1607,7 @@ produce runnable identity codes that could be used by Entropy Debugging.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%\subsection{The 3rd Example of Bad Figure}
 %%%%%%%%%%%%%%%%%%% begin figure %%%%%%%%%%%%%%%%%%%
-%%%\begin{figure} 
+%%%\begin{figure}
 %%%%\centerline{\psfig{figure=figure/FMANU_MD_04_1274_13.ps,width=3.34in}}
 %%%\centerline{\psfig{figure=figure/FMANU_MD_04_1274_13.ps,width=3.25in}}
 %%%\caption{Another example of a figure with unreadable text.  Even when the paper was expanded to double column width the text as shown in Fig.~\ref{fig_example4.ps} was of such low quality that the paper was held from production.}
@@ -1475,18 +1617,18 @@ produce runnable identity codes that could be used by Entropy Debugging.
 %%%
 %%%%%%%%%%%%%%%%%%% begin figure %%%%%%%%%%%%%%%%%%%
 %%%%%% the maximum width in double column is 6.85in
-%%%\begin{figure*} 
+%%%\begin{figure*}
 %%%\centerline{\psfig{figure=figure/FMANU_MD_04_1274_13.ps,width=6.85in}}
 %%%\caption{A figure expanded to double column width the text from Figure~\ref{fig_example3.ps}}
 %%%\label{fig_example4.ps}
 %%%\end{figure*}
 %%%%%%%%%%%%%%%%%%% end figure %%%%%%%%%%%%%%%%%%%
-%%%An author provided the high resolution image 
+%%%An author provided the high resolution image
 %%%in Fig.~\ref{fig_example3.ps}
-%%%that was sized to a single column width of 3.25in.  Upon seeing the poor quality of the text, the publisher scaled the image to double column width as shown in Fig.~\ref{fig_example4.ps} 
+%%%that was sized to a single column width of 3.25in.  Upon seeing the poor quality of the text, the publisher scaled the image to double column width as shown in Fig.~\ref{fig_example4.ps}
 %%%at which point it took half of a page.  The publisher went on to do this for all eight figures generating four pages of figures that the author did not expect. ASME stopped production of the paper even with the larger figures due to the pixilation of the font.
 %%%
-%%%Clearly the text in this figure is unreadable, and it is doubtful that the author can print the output in a way that it is readable.  This is a problem that the author must solve, not the publisher. 
+%%%Clearly the text in this figure is unreadable, and it is doubtful that the author can print the output in a way that it is readable.  This is a problem that the author must solve, not the publisher.
 %%%
 %%%As you might expect, I have many more examples, but in the end the author is the best judge of what is needed in each figure.  ASME simply requires that the image meet a minimum standard for font and line quality, specifically the font should be the appropriate size and not be blurred or pixilated, and that lines should be the appropriate weight and have minimal, preferably no, pixilation or rasterization.
 %%%
@@ -1511,7 +1653,7 @@ produce runnable identity codes that could be used by Entropy Debugging.
 %%%\end{tabular}
 %%%\end{center}
 %%%\end{table}
-%%%%%%%%%%%%%%%%%%% end table %%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%% end table %%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%
 %%%All tables should be numbered consecutively  and centered above the table as shown in Table~\ref{table_ASME}. The body of the table should be no smaller than 7 pt.  There should be a minimum two line spaces between tables and text.
@@ -1558,7 +1700,7 @@ Discussion TBD
 %%%If you can help to fix these problems, please send us an updated template.
 %%%If you know there is any other non-compliant item, please let us know.
 %%%We will add it to the above list.
-%%%With your help, we shall make this template 
+%%%With your help, we shall make this template
 %%%compliant to the ASME journal paper format.
 %%%
 %%%
@@ -1583,7 +1725,7 @@ Acknowledgement TBD
 % \end{thebibliography}
 
 % Here's where you specify the bibliography style file.
-% The full file name for the bibliography style file 
+% The full file name for the bibliography style file
 % used for an ASME paper is asmems4.bst.
 \bibliographystyle{asmems4}
 
