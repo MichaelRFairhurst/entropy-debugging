@@ -34,7 +34,7 @@ class MarkovModel {
 
   /// The probability that an important events (characters in a string, for
   /// instance) is followed by an unimportant event.
-  double get pTransitionToUnimportant => 1 - pRepeatUnimportant;
+  double get pTransitionToUnimportant => 1 - pRepeatImportant;
 
   /// The probability that an important event (characters in a string, for
   /// instance) is followed by an important event.
