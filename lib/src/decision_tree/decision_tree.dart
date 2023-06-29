@@ -1,3 +1,5 @@
+import 'package:entropy_debugging/src/model/entropy.dart' as model;
+
 /// A class to represent a decision tree, where the leaves are [Decision]s with
 /// some [probability], and the [Branch]es can be turned into questions.
 ///
@@ -11,6 +13,8 @@ abstract class DecisionTree<Outcome> {
   /// The average number of questions asked in walking this tree.
   double get cost;
 
+  double get entropy;
+
   double _costAtDepth(int depth);
 }
 
@@ -22,6 +26,9 @@ class Decision<Outcome> implements DecisionTree<Outcome> {
 
   @override
   double get cost => probability;
+
+  @override
+  double get entropy => model.entropy(probability);
 
   @override
   double _costAtDepth(int depth) => depth * cost;
@@ -47,6 +54,9 @@ class Branch<O> implements DecisionTree<O> {
 
   @override
   double get cost => _costAtDepth(0);
+
+  @override
+  double get entropy => left.entropy + right.entropy;
 
   @override
   double _costAtDepth(int depth) =>
