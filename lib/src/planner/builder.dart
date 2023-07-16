@@ -1,6 +1,8 @@
+import 'package:entropy_debugging/src/decision_tree/astar_builder.dart';
 import 'package:entropy_debugging/src/decision_tree/builder.dart';
 import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
 import 'package:entropy_debugging/src/decision_tree/naive_entropy_builder.dart';
+import 'package:entropy_debugging/src/decision_tree/greedy_even_probability_builder.dart';
 import 'package:entropy_debugging/src/decision_tree/optimal_builder.dart';
 import 'package:entropy_debugging/src/model/markov.dart';
 import 'package:entropy_debugging/src/model/sequence.dart';
@@ -19,7 +21,11 @@ class TreePlannerBuilder {
   TreePlannerBuilder(this._treeBuilder);
 
   TreePlannerBuilder.entropyCombinator() : this(entropyCombinatorBuilder());
+  TreePlannerBuilder.naiveEntropyBuilder() : this(naiveEntropyDecisionTreeBuilder());
+  TreePlannerBuilder.evenProbability() : this(greedyEvenProbabilityDecisionTreeBuilder());
+  TreePlannerBuilder.evenProbabilityCombinator() : this(greedyEvenProbabilityCombinatorBuilder());
   TreePlannerBuilder.huffmanLike() : this(HuffmanLikeDecisionTreeBuilder());
+  TreePlannerBuilder.astar([double weight = 1.0]) : this(AStarDecisionTreeBuilder(weight));
   TreePlannerBuilder.slowOptimal() : this(OptimalDecisionTreeBuilder());
 
   static TreePlanner defaultPlanner(MarkovModel model,
