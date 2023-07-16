@@ -2,6 +2,7 @@ import 'package:entropy_debugging/src/decision_tree/top_down_builder_step.dart';
 import 'package:entropy_debugging/src/decision_tree/builder_combinator.dart';
 import 'package:entropy_debugging/src/decision_tree/decision_tree.dart';
 import 'package:entropy_debugging/src/decision_tree/builder.dart';
+import 'package:entropy_debugging/src/decision_tree/huffmanlike_builder.dart';
 
 /// A [DecisionTreeBuilder] that greedily makes 50/50 probability branches.
 ///
@@ -19,8 +20,8 @@ DecisionTreeBuilder<T> greedyEvenProbabilityDecisionTreeBuilder<T>() =>
 DecisionTreeBuilder<T> greedyEvenProbabilityCombinatorBuilder<T>() =>
     DecisionTreeBuilderCombinator<T>(
         OptimalSizeThresholdTreeBuilderStep<T>(
-            GreedyEvenProbabilityDecisionTreeBuilderStep<T>(), 8),
-        []);
+            GreedyEvenProbabilityDecisionTreeBuilderStep<T>(), 15),
+        [HuffmanLikeDecisionTreeBuilder<T>()]);
 
 /// A [TopDownDecisionTreeBuilderStep]s to always take the closest path to 50%.
 ///
