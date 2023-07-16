@@ -7,6 +7,12 @@ import 'package:entropy_debugging/src/simplifier/simplifier.dart';
 class DeltaDebuggingWrapper<T> implements Simplifier<T, List<T>, bool> {
   @override
   List<T> simplify(List<T> input, bool Function(List<T>) test) =>
+      _DeltaDebuggingWrapper<T>(test).doMinimize(input);
+}
+
+class DeltaDebuggingSimplifyWrapper<T> implements Simplifier<T, List<T>, bool> {
+  @override
+  List<T> simplify(List<T> input, bool Function(List<T>) test) =>
       _DeltaDebuggingWrapper<T>(test).simplify(input);
 }
 
@@ -29,6 +35,15 @@ class _DeltaDebuggingWrapper<T> extends sync.DD {
   }
 
   List<T> simplify(List<T> input) {
+    var byOffset = <sync.Delta>[];
+    for (var i = 0; i < input.length; ++i) {
+      byOffset.add(sync.Delta(i, input[i]));
+    }
+    var result = ddsimplify(byOffset);
+    return coerce(result);
+  }
+
+  List<T> doMinimize(List<T> input) {
     var byOffset = <sync.Delta>[];
     for (var i = 0; i < input.length; ++i) {
       byOffset.add(sync.Delta(i, input[i]));

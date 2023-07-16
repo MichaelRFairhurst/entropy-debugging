@@ -222,6 +222,8 @@ abstract class DD {
   var outcome_cache = OutcomeCache<Delta>();
   var cache_outcomes = true;
   var minimize = true;
+  // This is my addition to enable dd to stop after single char sweep.
+  var one_minimize = true;
   var maximize = true;
   var assume_axioms_hold = true;
   List<Delta> CC;
@@ -639,9 +641,10 @@ abstract class DD {
   // Delta Debugging (new ISSTA version)
 
   /// Return a 1-minimal failing subset of C
-  ddgen(List<Delta> c, bool minimize, bool maximize) {
+  ddgen(List<Delta> c, bool minimize, bool maximize, bool one_minimize) {
     this.minimize = minimize;
     this.maximize = maximize;
+    this.one_minimize = one_minimize;
 
     var n = 2;
     CC = c;
@@ -752,6 +755,8 @@ abstract class DD {
             // In next run, start removing the following subset
             cbar_offset = i;
             break;
+          } else if (i == n - 1 && n >= c.length && !one_minimize) {
+            return next_c;
           }
         }
       }
@@ -765,7 +770,14 @@ abstract class DD {
 
         next_n = min<int>(c.length, n * 2);
         //print "dd: increase granularity to", next_n
-        cbar_offset = ((cbar_offset * next_n) / n).round();
+        if (one_minimize) {
+          // Keep traditional behavior to ensure no regression etc
+          cbar_offset = ((cbar_offset * next_n) / n).round();
+        } else {
+          // In the custom non-1-minimal version, this behavior is required
+          // to trigger the early exit condition properly.
+          cbar_offset = 0;
+        }
       }
 
       c = next_c;
@@ -774,11 +786,14 @@ abstract class DD {
     }
   }
 
-  ddmin(List<Delta> c) => ddgen(c, true, false);
+  // This is my addition to enable dd to simplify without 1-minimality
+  ddsimplify(List<Delta> c) => ddgen(c, true, false, false);
 
-  ddmax(List<Delta> c) => ddgen(c, false, true);
+  ddmin(List<Delta> c) => ddgen(c, true, false, true);
 
-  ddmix(List<Delta> c) => ddgen(c, true, true);
+  ddmax(List<Delta> c) => ddgen(c, false, true, true);
+
+  ddmix(List<Delta> c) => ddgen(c, true, true, true);
 
   /// General delta debugging (new TSE version)
 //    dddiff(self, c) {
